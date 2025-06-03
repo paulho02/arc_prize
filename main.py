@@ -1,17 +1,19 @@
 
+from matplotlib import pyplot as plt
+import networkx as nx
+from torch_geometric.utils import from_networkx
+from instruction_language.ast_transformer import hierarchy_plot
 from instruction_language.elements.base import Codeblock, Term
 from instruction_language.elements.conditions import EqualTo, LessThan
 from instruction_language.elements.control_statements import If, WhileLoop
 from instruction_language.elements.instructions import Read_Pixel, Read_Var, Write_Pixel, Write_Var
 from instruction_language.elements.operators import SUM
 from instruction_language.interpreter import InstructionInterpreter
+import json
 
 
-env_before = [[0, 1, 1], 
+env_before = [[0, 1, 1],
               [0, 1, 1]]
-
-
-
 
 
 # todo introduce system variables (like envs size, etc ..)
@@ -45,7 +47,7 @@ epoch_2_plan.execution_plan = [
                                             env_rs_2,
                                             Term(Read_Var("current_x")),
                                             Term(Read_Var("current_y")),
-                                            1,
+                                            Term(1),
                                         )
                                     ]
                                 ),
@@ -66,7 +68,7 @@ epoch_2_plan.execution_plan = [
                                                 env_rs_2,
                                                 Read_Var("current_x"),
                                                 Read_Var("current_y"),
-                                                0,
+                                                Term(0),
                                             )
                                         ]
                                     ),
@@ -91,9 +93,25 @@ epoch_2_plan.execution_plan = [
     ),
 ]
 
-interpreter = InstructionInterpreter(initial_env=env_before, output_env=env_rs_2, memory_manager_id='hello_word_mm_id')
+interpreter = InstructionInterpreter(
+    initial_env=env_before, output_env=env_rs_2, memory_manager_id='hello_word_mm_id')
 
 interpreter.execute(epoch_2_plan)
 
 interpreter.print_intitial_env()
 interpreter.print_output_env()
+
+ast, root = epoch_2_plan.to_ast()
+
+plot_blueprint = hierarchy_plot(ast, root)
+nx.draw(ast, pos=plot_blueprint, with_labels=True, arrows=True)
+plt.show()
+
+
+# nodes_data = [
+#     {"id": n, **d} for n, d in ast.nodes(data=True)
+# ]
+# print(json.dumps(nodes_data, indent=2))
+
+data = from_networkx(ast)
+print(data)

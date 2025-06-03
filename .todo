@@ -1,0 +1,6 @@
+# steps to do:
+# 1. implement AST graph generation from codeblock (translation of codeblock to a graph structure) ️✅
+# 2. implement function that modifies a codeblock (add and remove elements like while, if, ...)
+# 3. implement codeblock "analyzer" that can detect points where a codeblock can be modified, where it needs to be modified and what elements are avaible for that point
+
+# 4. build the interation so that the NN can trigger a modification, the codeblock is then translated to a graph and passed then back to NN

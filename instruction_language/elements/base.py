@@ -1,22 +1,52 @@
 from abc import ABC, abstractmethod
 import os
+from typing import Union
+import networkx as nx
 
 from instruction_language.surroundings.memory import GMMService
+
 
 class Executable(ABC):
     @abstractmethod
     def execute(self):
         pass
 
+    @abstractmethod
+    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+        pass
+
+
 class Term(Executable):
-    def __init__(self, term):
+    def __init__(self, term: Union[int, Executable]):
         self.term = term
 
     def execute(self):
-        try:
-            return self.term.execute()
-        except AttributeError as e:
+        if isinstance(self.term, int):
             return self.term
+        elif isinstance(self.term, Executable):
+            return self.term.execute()
+        else:
+            raise TypeError(
+                f"Unsupported term type: {type(self.term)}. Expected int or Executable.")
+
+    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+        """Converts the term to an AST representation."""
+        suffix = f"{parent_suffix}.{order}"
+        this_node = self.__class__.__name__ + suffix
+
+        if isinstance(self.term, int):
+            ast.add_node(this_node, type="term", carrying_value=self.term)
+        elif isinstance(self.term, Executable):
+            ast.add_node(this_node, type="term", carrying_value=None)
+            self.term.to_ast(ast, parent_suffix=suffix,
+                             order=0, parent=this_node)
+        else:
+            raise TypeError(
+                f"Unsupported term type: {type(self.term)}. Expected int or Executable.")
+
+        if parent is not None:
+            ast.add_edge(parent, this_node, order=order)
+
 
 class Codeblock(Executable):
     def __init__(self, execution_plan: list[Executable] = []):
@@ -32,3 +62,20 @@ class Codeblock(Executable):
             except Exception as e:
                 print(f"Exception in step {i} (step type: {type(step)})")
                 raise e
+
+    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+        """Converts the codeblock to an AST representation."""
+
+        suffix = f"{parent_suffix}.{order}"
+        this_node = self.__class__.__name__ + suffix
+
+        ast.add_node(this_node, type="codeblock", carrying_value=None)
+
+        # call to_ast for each child
+        for i, step in enumerate(self.execution_plan):
+            step.to_ast(ast, parent_suffix=suffix, order=i, parent=this_node)
+
+        if parent is not None:
+            ast.add_edge(parent, this_node, order=order)
+
+        return ast, this_node
