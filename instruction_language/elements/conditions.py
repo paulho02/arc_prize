@@ -13,15 +13,18 @@ class Condition:
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None, type: str = "condition"):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
-        this_node = self.__class__.__name__ + suffix
+        node_label = self.__class__.__name__ + suffix
 
-        ast.add_node(this_node, type="less_than", carrying_value=None)
+        ast.add_node(self, label=node_label,
+                     type="less_than", carrying_value=None)
 
-        self.term1.to_ast(ast, parent_suffix=suffix, order=0, parent=this_node)
-        self.term2.to_ast(ast, parent_suffix=suffix, order=1, parent=this_node)
+        self.term1.to_ast(ast, parent_suffix=suffix,
+                          order=0, parent=self)
+        self.term2.to_ast(ast, parent_suffix=suffix,
+                          order=1, parent=self)
 
         if parent is not None:
-            ast.add_edge(parent, this_node, order=order)
+            ast.add_edge(parent, self, order=order)
 
 
 class LessThan(Condition):

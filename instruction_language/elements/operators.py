@@ -26,17 +26,17 @@ class SUM(Operator):
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
-        this_node = self.__class__.__name__ + suffix
+        node_label = self.__class__.__name__ + suffix
 
-        ast.add_node(this_node, type="sum", carrying_value=None)
+        ast.add_node(self, label=node_label, type="sum", carrying_value=None)
 
         self.term1.to_ast(ast, parent_suffix=suffix,
-                          order=0, parent=this_node)
+                          order=0, parent=self)
         self.term2.to_ast(ast, parent_suffix=suffix,
-                          order=1, parent=this_node)
+                          order=1, parent=self)
 
         if parent is not None:
-            ast.add_edge(parent, this_node, order=order)
+            ast.add_edge(parent, self, order=order)
 
 
 # todo implement further operators

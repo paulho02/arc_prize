@@ -32,20 +32,22 @@ class Term(Executable):
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
-        this_node = self.__class__.__name__ + suffix
+        node_label = self.__class__.__name__ + suffix
 
         if isinstance(self.term, int):
-            ast.add_node(this_node, type="term", carrying_value=self.term)
+            ast.add_node(self, type="term", label=node_label,
+                         carrying_value=self.term)
         elif isinstance(self.term, Executable):
-            ast.add_node(this_node, type="term", carrying_value=None)
+            ast.add_node(self, label=node_label, type="term",
+                         carrying_value=None)
             self.term.to_ast(ast, parent_suffix=suffix,
-                             order=0, parent=this_node)
+                             order=0, parent=self)
         else:
             raise TypeError(
                 f"Unsupported term type: {type(self.term)}. Expected int or Executable.")
 
         if parent is not None:
-            ast.add_edge(parent, this_node, order=order)
+            ast.add_edge(parent, self, order=order)
 
 
 class Codeblock(Executable):
@@ -67,15 +69,16 @@ class Codeblock(Executable):
         """Converts the codeblock to an AST representation."""
 
         suffix = f"{parent_suffix}.{order}"
-        this_node = self.__class__.__name__ + suffix
+        node_label = self.__class__.__name__ + suffix
 
-        ast.add_node(this_node, type="codeblock", carrying_value=None)
+        ast.add_node(self, label=node_label,
+                     type="codeblock", carrying_value=None)
 
         # call to_ast for each child
         for i, step in enumerate(self.execution_plan):
-            step.to_ast(ast, parent_suffix=suffix, order=i, parent=this_node)
+            step.to_ast(ast, parent_suffix=suffix, order=i, parent=self)
 
         if parent is not None:
-            ast.add_edge(parent, this_node, order=order)
+            ast.add_edge(parent, self, order=order)
 
-        return ast, this_node
+        return ast, self

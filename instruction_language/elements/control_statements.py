@@ -33,21 +33,21 @@ class If(ControlFlowStatement):
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
-        this_node = self.__class__.__name__ + suffix
+        node_label = self.__class__.__name__ + suffix
 
-        ast.add_node(this_node, type="if", carrying_value=None)
+        ast.add_node(self, label=node_label, type="if", carrying_value=None)
 
         self.default.to_ast(ast, parent_suffix=suffix,
-                            order=0, parent=this_node)
+                            order=0, parent=self)
 
         for i, (condition, codeblock) in enumerate(self.condition_code_plan):
             condition.to_ast(ast, parent_suffix=suffix,
-                             order=i + 1, parent=this_node)
+                             order=i + 1, parent=self)
             codeblock.to_ast(ast, parent_suffix=suffix,
-                             order=i + 1, parent=this_node)
+                             order=i + 1, parent=self)
 
         if parent is not None:
-            ast.add_edge(parent, this_node, order=order)
+            ast.add_edge(parent, self, order=order)
 
 
 class WhileLoop(ControlFlowStatement):
@@ -63,14 +63,14 @@ class WhileLoop(ControlFlowStatement):
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
-        this_node = self.__class__.__name__ + suffix
+        node_label = self.__class__.__name__ + suffix
 
-        ast.add_node(this_node, type="while", carrying_value=None)
+        ast.add_node(self, label=node_label, type="while", carrying_value=None)
 
         self.condition.to_ast(ast, parent_suffix=suffix,
-                              order=0, parent=this_node)
+                              order=0, parent=self)
         self.codeblock.to_ast(ast, parent_suffix=suffix,
-                              order=0, parent=this_node)
+                              order=0, parent=self)
 
         if parent is not None:
-            ast.add_edge(parent, this_node, order=order)
+            ast.add_edge(parent, self, order=order)

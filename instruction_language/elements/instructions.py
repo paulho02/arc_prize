@@ -34,17 +34,18 @@ class Read_Pixel(Instruction):
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
-        this_node = self.__class__.__name__ + suffix
+        node_label = self.__class__.__name__ + suffix
 
-        ast.add_node(this_node, type="read_pixel", carrying_value=None)
+        ast.add_node(self, label=node_label,
+                     type="read_pixel", carrying_value=None)
 
         self.x.to_ast(ast, parent_suffix=suffix,
-                      order=0, parent=this_node)
+                      order=0, parent=self)
         self.y.to_ast(ast, parent_suffix=suffix,
-                      order=1, parent=this_node)
+                      order=1, parent=self)
 
         if parent is not None:
-            ast.add_edge(parent, this_node, order=order)
+            ast.add_edge(parent, self, order=order)
 
 
 class Write_Pixel(Instruction):
@@ -72,19 +73,20 @@ class Write_Pixel(Instruction):
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
-        this_node = self.__class__.__name__ + suffix
+        node_label = self.__class__.__name__ + suffix
 
-        ast.add_node(this_node, type="write_pixel", carrying_value=None)
+        ast.add_node(self, label=node_label,
+                     type="write_pixel", carrying_value=None)
 
         self.value.to_ast(ast, parent_suffix=suffix,
-                          order=0, parent=this_node)
+                          order=0, parent=self)
         self.x.to_ast(ast, parent_suffix=suffix,
-                      order=1, parent=this_node)
+                      order=1, parent=self)
         self.y.to_ast(ast, parent_suffix=suffix,
-                      order=2, parent=this_node)
+                      order=2, parent=self)
 
         if parent is not None:
-            ast.add_edge(parent, this_node, order=order)
+            ast.add_edge(parent, self, order=order)
 
 
 # todo maybe replace direct key access with Term, etc..
@@ -100,12 +102,13 @@ class Read_Var(Instruction):
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
-        this_node = self.__class__.__name__ + suffix
+        node_label = self.__class__.__name__ + suffix
 
-        ast.add_node(this_node, type="read_var", carrying_value=self.key)
+        ast.add_node(self, label=node_label, type="read_var",
+                     carrying_value=self.key)
 
         if parent is not None:
-            ast.add_edge(parent, this_node, order=order)
+            ast.add_edge(parent, self, order=order)
 
 
 class Write_Var(Instruction):
@@ -121,11 +124,12 @@ class Write_Var(Instruction):
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
-        this_node = self.__class__.__name__ + suffix
+        node_label = self.__class__.__name__ + suffix
 
         self.value.to_ast(ast, parent_suffix=suffix,
-                          order=0, parent=this_node)
-        ast.add_node(this_node, type="write_var", carrying_value=self.key)
+                          order=0, parent=self)
+        ast.add_node(self, label=node_label, type="write_var",
+                     carrying_value=self.key)
 
         if parent is not None:
-            ast.add_edge(parent, this_node, order=order)
+            ast.add_edge(parent, self, order=order)
