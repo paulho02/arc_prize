@@ -11,15 +11,16 @@ from instruction_language.elements.operators import SUM
 from instruction_language.interpreter import InstructionInterpreter
 import json
 
+from instruction_language.surroundings.environment import Environment, GEMService
 
-env_before = [[0, 1, 1],
-              [0, 1, 1]]
+
+intial_env = Environment.from_list([[1, 1, 1],
+                                    [0, 1, 1]])
+GEMService.set("INITIAL_ENV", intial_env)
 
 
 # todo introduce system variables (like envs size, etc ..)
 
-# todo outsource output env in interpreter class
-env_rs_2 = []
 epoch_2_plan = Codeblock()
 epoch_2_plan.execution_plan = [
     Write_Var("env_size_x", Term(2)),
@@ -44,7 +45,7 @@ epoch_2_plan.execution_plan = [
                                 Codeblock(
                                     [
                                         Write_Pixel(
-                                            env_rs_2,
+                                            "OUTPUT_ENV",
                                             Term(Read_Var("current_x")),
                                             Term(Read_Var("current_y")),
                                             Term(1),
@@ -55,7 +56,7 @@ epoch_2_plan.execution_plan = [
                                     EqualTo(
                                         Term(
                                             Read_Pixel(
-                                                env_before,
+                                                "INITIAL_ENV",
                                                 Read_Var("current_x"),
                                                 Read_Var("current_y"),
                                             )
@@ -65,7 +66,7 @@ epoch_2_plan.execution_plan = [
                                     Codeblock(
                                         [
                                             Write_Pixel(
-                                                env_rs_2,
+                                                "OUTPUT_ENV",
                                                 Read_Var("current_x"),
                                                 Read_Var("current_y"),
                                                 Term(0),
@@ -93,13 +94,13 @@ epoch_2_plan.execution_plan = [
     ),
 ]
 
-interpreter = InstructionInterpreter(
-    initial_env=env_before, output_env=env_rs_2, memory_manager_id='hello_word_mm_id')
+interpreter = InstructionInterpreter(memory_manager_id='hello_word_mm_id')
 
 interpreter.execute(epoch_2_plan)
 
-interpreter.print_intitial_env()
-interpreter.print_output_env()
+# todo ones everywhere
+GEMService.print_initial_env()
+GEMService.print_output_env()
 
 ast, root = epoch_2_plan.to_ast()
 

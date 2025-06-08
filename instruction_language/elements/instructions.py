@@ -1,5 +1,6 @@
 import os
 from instruction_language.elements.base import Executable, Term
+from instruction_language.surroundings.environment import GEMService
 from instruction_language.surroundings.memory import GMMService
 import networkx as nx
 
@@ -16,20 +17,17 @@ class Instruction(Executable):
 
 
 class Read_Pixel(Instruction):
-    def __init__(self, env, x: Term, y: Term):
+    def __init__(self, env_key: str, x: Term, y: Term):
         super().__init__()
-        self.env = env
+        self.env_key = env_key
         self.x = x
         self.y = y
 
     def execute(self):
         x = self.x.execute()
         y = self.y.execute()
-
-        try:
-            return self.env[x][y]
-        except IndexError:
-            return None
+        env = GEMService.get(self.env_key)
+        return env.get(x, y)
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
@@ -49,26 +47,21 @@ class Read_Pixel(Instruction):
 
 
 class Write_Pixel(Instruction):
-    def __init__(self, env, x: Term, y: Term, value: Term):
+    def __init__(self, env_key: str, x: Term, y: Term, value: Term):
         super().__init__()
-        self.env = env
+        self.env_key = env_key
         self.x = x
         self.y = y
         self.value = value
+
+    # todo make initial_env write protected
 
     def execute(self):
         x = self.x.execute()
         y = self.y.execute()
         value = self.value.execute()
-
-        while len(self.env) <= x:
-            self.env.append([])
-
-        while len(self.env[x]) <= y:
-            self.env[x].append(0)
-
-        # Write pixel value
-        self.env[x][y] = value
+        env = GEMService.get(self.env_key)
+        env.set(x, y, value)
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
