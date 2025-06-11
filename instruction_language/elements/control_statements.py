@@ -23,7 +23,7 @@ class If(ControlFlowStatement):
 
     def execute(self):
         for condition, codeblock in self.condition_code_plan:
-            if condition.apply():
+            if condition.execute():
                 codeblock.execute()
                 return
 
@@ -57,7 +57,7 @@ class WhileLoop(ControlFlowStatement):
         self.codeblock = codeblock
 
     def execute(self):
-        while self.condition.apply():
+        while self.condition.execute():
             self.codeblock.execute()
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):

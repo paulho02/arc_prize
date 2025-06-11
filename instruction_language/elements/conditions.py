@@ -1,13 +1,13 @@
-from instruction_language.elements.base import Term
+from instruction_language.elements.base import Executable, Term
 import networkx as nx
 
 
-class Condition:
+class Condition(Executable):
     def __init__(self, term1: Term, term2: Term):
         self.term1 = term1
         self.term2 = term2
 
-    def apply(self) -> bool:
+    def execute(self) -> bool:
         pass
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None, type: str = "condition"):
@@ -31,7 +31,7 @@ class LessThan(Condition):
     def __init__(self, term1: Term, term2: Term):
         super().__init__(term1, term2)
 
-    def apply(self):
+    def execute(self):
         return self.term1.execute() < self.term2.execute()
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
@@ -43,7 +43,7 @@ class EqualTo(Condition):
     def __init__(self, term1: Term, term2: Term):
         super().__init__(term1, term2)
 
-    def apply(self):
+    def execute(self):
         return (
             self.term1.execute() is self.term2.execute()
             or self.term1.execute() == self.term2.execute()
@@ -58,7 +58,7 @@ class GreaterThan(Condition):
     def __init__(self, term1: Term, term2: Term):
         super().__init__(term1, term2)
 
-    def apply(self):
+    def execute(self):
         return self.term1.execute() > self.term2.execute()
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
