@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from instruction_language.elements.base import Executable, Term
 import networkx as nx
 
@@ -6,9 +7,11 @@ class Operator(Executable):
     def __init__(self, term1: Term, term2: Term):
         pass
 
+    @abstractmethod
     def execute(self):
         pass
 
+    @abstractmethod
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         pass
 

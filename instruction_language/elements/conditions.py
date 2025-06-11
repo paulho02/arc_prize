@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from instruction_language.elements.base import Executable, Term
 import networkx as nx
 
@@ -7,6 +8,7 @@ class Condition(Executable):
         self.term1 = term1
         self.term2 = term2
 
+    @abstractmethod
     def execute(self) -> bool:
         pass
 

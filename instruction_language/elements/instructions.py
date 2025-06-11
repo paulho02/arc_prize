@@ -1,3 +1,4 @@
+from abc import abstractmethod
 import os
 from instruction_language.elements.base import Executable, Term
 from instruction_language.surroundings.environment import GEMService
@@ -9,9 +10,11 @@ class Instruction(Executable):
     def __init__(self):
         pass
 
+    @abstractmethod
     def execute(self):
         pass
 
+    @abstractmethod
     def to_ast(self, ast=None, parent_suffix="", order=0, parent=None):
         pass
 

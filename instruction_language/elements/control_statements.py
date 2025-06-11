@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from instruction_language.elements.base import Codeblock, Executable
 from instruction_language.elements.conditions import Condition
 import networkx as nx
@@ -7,9 +8,11 @@ class ControlFlowStatement(Executable):
     def __init__(self):
         pass
 
+    @abstractmethod
     def execute(self):
         pass
 
+    @abstractmethod
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         pass
 
