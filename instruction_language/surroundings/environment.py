@@ -44,10 +44,45 @@ class Environment():
 
         for x, row in enumerate(env_list):
             for y, value in enumerate(row):
-                if value != 0:
-                    environment.set(x, y, value)
+                # if value != 0:
+                environment.set(x, y, value)
 
         return environment
+
+    def plot(self, title=None):
+        title = title if title else str(self)
+        env_list = self.to_list()
+
+        print("------------------")
+        print(f"Env '{title}':")
+        for row in env_list:
+            for col in row:
+                print(f" {col} ", end="")
+            print()
+        print("------------------")
+
+
+def evaluate(env1: Environment, env2: Environment) -> int:
+    # todo maybe need to be adjusted to work with environments that support more than 2 possible values
+    """
+    function that evaluates the deviation between two environments
+    can be used to calculate a score how good a environment is
+    """
+    env1 = env1.to_list()
+    env2 = env2.to_list()
+
+    deviation_score = 0
+    max_rows = max(len(env1), len(env2))
+    max_cols = max(len(env1[0]) if env1 else 0, len(env2[0]) if env2 else 0)
+
+    for i in range(max_rows):
+        for j in range(max_cols):
+            val1 = env1[i][j] if i < len(env1) and j < len(env1[i]) else None
+            val2 = env2[i][j] if i < len(env2) and j < len(env2[i]) else None
+            if val1 != val2:
+                deviation_score += 1
+
+    return deviation_score
 
 
 class GEMService:
@@ -129,29 +164,15 @@ class GEMService:
         GEMService._envs[env_key] = Environment()
 
     @staticmethod
-    def print_env(env_key: str):
-        env = GEMService.get(env_key)
-        print(env)
-        env_list = env.to_list()
-
-        print("------------------")
-        print(f"Env '{env_key}':")
-        for row in env_list:
-            for col in row:
-                print(f" {col} ", end="")
-            print()
-        print("------------------")
-
-    @staticmethod
     def print_initial_env():
         """
         Print method for specific hardcoded environment.
         """
-        GEMService.print_env("INITIAL_ENV")
+        GEMService.get_initial_env().plot("INITIAL_ENV")
 
     @staticmethod
     def print_output_env():
         """
         Print method for specific hardcoded environment.
         """
-        GEMService.print_env("OUTPUT_ENV")
+        GEMService.get_output_env().plot(title="OUTPUT_ENV")

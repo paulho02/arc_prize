@@ -12,6 +12,10 @@ class Executable(ABC):
         pass
 
     @abstractmethod
+    def add_child(self, child: 'Executable', order: int = 0):
+        pass
+
+    @abstractmethod
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         pass
 
@@ -28,6 +32,9 @@ class Term(Executable):
         else:
             raise TypeError(
                 f"Unsupported term type: {type(self.term)}. Expected int or Executable.")
+
+    def add_child(self, child: 'Executable'):
+        self.term = child
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
@@ -64,6 +71,15 @@ class Codeblock(Executable):
             except Exception as e:
                 print(f"Exception in step {i} (step type: {type(step)})")
                 raise e
+
+    def add_child(self, child: Executable, order: int = 0):
+        # if order ist out of range, set it to max or minimum
+        if order < 0:
+            order = 0
+        elif order > len(self.execution_plan):
+            order = len(self.execution_plan)
+
+        self.execution_plan.insert(order, child)
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the codeblock to an AST representation."""

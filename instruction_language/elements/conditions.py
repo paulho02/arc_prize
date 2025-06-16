@@ -12,6 +12,12 @@ class Condition(Executable):
     def execute(self) -> bool:
         pass
 
+    def add_child(self, child: 'Executable', order: int):
+        if order <= 0:
+            self.term1 = child
+        elif order >= 1:
+            self.term2 = child
+
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None, type: str = "condition"):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
