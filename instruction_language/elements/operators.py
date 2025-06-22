@@ -1,10 +1,11 @@
 from abc import abstractmethod
+from typing import Union
 from instruction_language.elements.base import Executable, Term
 import networkx as nx
 
 
 class Operator(Executable):
-    def __init__(self, term1: Term, term2: Term):
+    def __init__(self, term1: Union[Term, None], term2: Union[Term, None]):
         pass
 
     @abstractmethod
@@ -16,16 +17,20 @@ class Operator(Executable):
         pass
 
     @abstractmethod
+    def delete_child(self, order: int):
+        pass
+
+    @abstractmethod
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         pass
 
 
 class SUM(Operator):
-    def __init__(self, term1: Term, term2: Term):
+    def __init__(self, term1: Union[Term, None], term2: Union[Term, None]):
         super().__init__(term1, term2)
 
-        self.term1 = term1
-        self.term2 = term2
+        self.term1: Union[Term, None] = term1
+        self.term2: Union[Term, None] = term2
 
     def execute(self):
         return self.term1.execute() + self.term2.execute()
@@ -38,6 +43,12 @@ class SUM(Operator):
             self.term1 = child
         elif order >= 1:
             self.term2 = child
+
+    def delete_child(self, order: int):
+        if order <= 0:
+            self.term1 = None
+        elif order >= 1:
+            self.term2 = None
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""

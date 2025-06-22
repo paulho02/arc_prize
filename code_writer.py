@@ -73,3 +73,7 @@ def new_node(parent: Executable, node_type: n_types, order: int, carrying_value:
 
     parent.add_child(new_node, order)
     return new_node
+
+
+def delete_node(parent: Executable, order: int) -> None:
+    parent.delete_child(order)

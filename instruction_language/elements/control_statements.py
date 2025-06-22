@@ -18,6 +18,10 @@ class ControlFlowStatement(Executable):
         pass
 
     @abstractmethod
+    def delete_child(self, order: int):
+        pass
+
+    @abstractmethod
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         pass
 
@@ -63,6 +67,17 @@ class If(ControlFlowStatement):
 
             self.condition_code_plan.insert(index, code_condition_tuple)
 
+    def delete_child(self, order: int):
+        if order <= 0:
+            self.default = None
+        elif order >= 1:
+            index = order - 1
+            if index < len(self.condition_code_plan):
+                del self.condition_code_plan[index]
+            else:
+                raise IndexError(
+                    f"No condition_code_plan at index {index}. Current length: {len(self.condition_code_plan)}.")
+
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
@@ -100,6 +115,10 @@ class WhileLoop(ControlFlowStatement):
             self.codeblock = child
         else:
             raise TypeError("Child must be either a Condition or a Codeblock.")
+
+    def delete_child(self, order: int):
+        self.condition = None
+        self.codeblock = None
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""

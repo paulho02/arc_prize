@@ -7,3 +7,4 @@
 
 ## Lower prio to dos:
 - fix type erros and warnings in the whole codebase
+- rework oder system (it could become unclear which order represents which child)

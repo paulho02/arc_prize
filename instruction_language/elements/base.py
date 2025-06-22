@@ -16,6 +16,10 @@ class Executable(ABC):
         pass
 
     @abstractmethod
+    def delete_child(self, order: int):
+        pass
+
+    @abstractmethod
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         pass
 
@@ -35,6 +39,9 @@ class Term(Executable):
 
     def add_child(self, child: 'Executable', order: int = 0):
         self.term = child
+
+    def delete_child(self, order: int):
+        self.term = None
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
@@ -80,6 +87,13 @@ class Codeblock(Executable):
             order = len(self.execution_plan)
 
         self.execution_plan.insert(order, child)
+
+    def delete_child(self, order: int):
+        """Deletes a child at the specified order."""
+        if 0 <= order < len(self.execution_plan):
+            del self.execution_plan[order]
+        else:
+            raise IndexError("Order out of range for execution plan.")
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the codeblock to an AST representation."""

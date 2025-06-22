@@ -18,6 +18,12 @@ class Condition(Executable):
         elif order >= 1:
             self.term2 = child
 
+    def delete_child(self, order: int):
+        if order <= 0:
+            self.term1 = None
+        elif order >= 1:
+            self.term2 = None
+
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None, type: str = "condition"):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"

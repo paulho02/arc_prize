@@ -20,6 +20,10 @@ class Instruction(Executable):
         pass
 
     @abstractmethod
+    def delete_child(self, order: int):
+        pass
+
+    @abstractmethod
     def to_ast(self, ast=None, parent_suffix="", order=0, parent=None):
         pass
 
@@ -28,8 +32,8 @@ class Read_Pixel(Instruction):
     def __init__(self, env_key: Union[str, None], x: Term, y: Term):
         super().__init__()
         self.env_key: Union[str, None] = env_key
-        self.x = x
-        self.y = y
+        self.x: Union[Term, None] = x
+        self.y: Union[Term, None] = y
 
     def execute(self):
         x = self.x.execute()
@@ -45,6 +49,12 @@ class Read_Pixel(Instruction):
             self.x = child
         elif order >= 1:
             self.y = child
+
+    def delete_child(self, order: int):
+        if order <= 0:
+            self.x = None
+        elif order >= 1:
+            self.y = None
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
@@ -64,12 +74,12 @@ class Read_Pixel(Instruction):
 
 
 class Write_Pixel(Instruction):
-    def __init__(self, env_key: Union[str, None], x: Term, y: Term, value: Term):
+    def __init__(self, env_key: Union[str, None], x: Union[Term, None], y: Union[Term, None], value: Union[Term, None]):
         super().__init__()
         self.env_key: Union[str, None] = env_key
-        self.x: Term = x
-        self.y: Term = y
-        self.value: Term = value
+        self.x: Union[Term, None] = x
+        self.y: Union[Term, None] = y
+        self.value: Union[Term, None] = value
 
     # todo make initial_env write protected
 
@@ -90,6 +100,14 @@ class Write_Pixel(Instruction):
             self.x = child
         elif order >= 2:
             self.y = child
+
+    def delete_child(self, order: int):
+        if order <= 0:
+            self.value = None
+        elif order == 1:
+            self.x = None
+        elif order >= 2:
+            self.y = None
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
@@ -124,6 +142,10 @@ class Read_Var(Instruction):
         # A Read_Var cannot have children, so this method does nothing.
         pass
 
+    def delete_child(self, order: int):
+        # A Read_Var cannot have children, so this method does nothing.
+        pass
+
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
@@ -137,10 +159,10 @@ class Read_Var(Instruction):
 
 
 class Write_Var(Instruction):
-    def __init__(self, key, value: Term):
+    def __init__(self, key, value: Union[Term, None]):
         super().__init__()
         self.key = key
-        self.value = value
+        self.value: Union[Term, None] = value
 
     def execute(self):
         namespace_id = os.environ.get("CURRENT_NAMESPACE_ID")
@@ -151,6 +173,9 @@ class Write_Var(Instruction):
             raise TypeError("Child must be an instance of Term.")
 
         self.value = child
+
+    def delete_child(self, order: int):
+        self.value = None
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
