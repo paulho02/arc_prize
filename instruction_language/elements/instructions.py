@@ -20,9 +20,9 @@ class Instruction(Executable):
 
 
 class Read_Pixel(Instruction):
-    def __init__(self, env_key: str, x: Term, y: Term):
+    def __init__(self, env_key: Union[str, None], x: Term, y: Term):
         super().__init__()
-        self.env_key = env_key
+        self.env_key: Union[str, None] = env_key
         self.x = x
         self.y = y
 
@@ -50,12 +50,12 @@ class Read_Pixel(Instruction):
 
 
 class Write_Pixel(Instruction):
-    def __init__(self, env_key: str, x: Term, y: Term, value: Term):
+    def __init__(self, env_key: Union[str, None], x: Term, y: Term, value: Term):
         super().__init__()
-        self.env_key = env_key
-        self.x = x
-        self.y = y
-        self.value = value
+        self.env_key: Union[str, None] = env_key
+        self.x: Term = x
+        self.y: Term = y
+        self.value: Term = value
 
     # todo make initial_env write protected
 
