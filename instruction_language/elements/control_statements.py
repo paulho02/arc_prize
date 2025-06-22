@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from typing import Union
 from instruction_language.elements.base import Codeblock, Executable
 from instruction_language.elements.conditions import Condition
 import networkx as nx
@@ -13,6 +14,10 @@ class ControlFlowStatement(Executable):
         pass
 
     @abstractmethod
+    def add_child(self, child: Executable, order: int = 0):
+        pass
+
+    @abstractmethod
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         pass
 
@@ -22,7 +27,9 @@ class If(ControlFlowStatement):
     def __init__(self, default: Codeblock, *args: tuple[Condition, Codeblock]):
         super().__init__()
         self.default = default
-        self.condition_code_plan = list(args)
+        # typing says condition_code_plan can take infinite tuples of (Condition, Codeblock), but can be None (which is necessary during the code_writing process)
+        self.condition_code_plan: list[tuple[Union[Condition, None], Union[Condition, None]]] = list(
+            args)
 
     def execute(self):
         for condition, codeblock in self.condition_code_plan:
@@ -32,6 +39,29 @@ class If(ControlFlowStatement):
 
         self.default.execute()
         return
+
+    def add_child(self, child: Executable, order: int = 0):
+        if order <= 0:
+            if not isinstance(child, Codeblock):
+                raise TypeError("Default child must be a Codeblock.")
+            self.default.add_child(child)
+        elif order >= 1:
+            index = order - 1
+            code_condition_tuple = self.condition_code_plan.get(
+                index, (None, None))
+
+            # assign the child to according pos in the tuple (and leave the other one as it is)
+            if isinstance(child, Condition):
+                code_condition_tuple = (
+                    child, code_condition_tuple[1])
+            elif isinstance(child, Codeblock):
+                code_condition_tuple = (
+                    code_condition_tuple[0], child)
+            else:
+                raise TypeError(
+                    "Child must be either a Condition or a Codeblock.")
+
+            self.condition_code_plan.insert(index, code_condition_tuple)
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
@@ -62,6 +92,14 @@ class WhileLoop(ControlFlowStatement):
     def execute(self):
         while self.condition.execute():
             self.codeblock.execute()
+
+    def add_child(self, child: Executable, order: int = 0):
+        if isinstance(child, Condition):
+            self.condition = child
+        elif isinstance(child, Codeblock):
+            self.codeblock = child
+        else:
+            raise TypeError("Child must be either a Condition or a Codeblock.")
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""

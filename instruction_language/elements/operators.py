@@ -12,6 +12,10 @@ class Operator(Executable):
         pass
 
     @abstractmethod
+    def add_child(self, child, order=0):
+        pass
+
+    @abstractmethod
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         pass
 
@@ -25,6 +29,15 @@ class SUM(Operator):
 
     def execute(self):
         return self.term1.execute() + self.term2.execute()
+
+    def add_child(self, child, order=0):
+        if not isinstance(child, Term):
+            raise TypeError("Child must be an instance of Term.")
+
+        if order <= 0:
+            self.term1 = child
+        elif order >= 1:
+            self.term2 = child
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""

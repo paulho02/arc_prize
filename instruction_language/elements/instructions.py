@@ -1,5 +1,6 @@
 from abc import abstractmethod
 import os
+from typing import Union
 from instruction_language.elements.base import Executable, Term
 from instruction_language.surroundings.environment import GEMService
 from instruction_language.surroundings.memory import GMMService
@@ -12,6 +13,10 @@ class Instruction(Executable):
 
     @abstractmethod
     def execute(self):
+        pass
+
+    @abstractmethod
+    def add_child(self, child: 'Executable', order: int = 0):
         pass
 
     @abstractmethod
@@ -31,6 +36,15 @@ class Read_Pixel(Instruction):
         y = self.y.execute()
         env = GEMService.get(self.env_key)
         return env.get(x, y)
+
+    def add_child(self, child: 'Executable', order: int = 0):
+        if not isinstance(child, Term):
+            raise TypeError("Child must be an instance of Term.")
+
+        if order <= 0:
+            self.x = child
+        elif order >= 1:
+            self.y = child
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
@@ -66,6 +80,17 @@ class Write_Pixel(Instruction):
         env = GEMService.get(self.env_key)
         env.set(x, y, value)
 
+    def add_child(self, child: 'Executable', order: int = 0):
+        if not isinstance(child, Term):
+            raise TypeError("Child must be an instance of Term.")
+
+        if order <= 0:
+            self.value = child
+        elif order == 1:
+            self.x = child
+        elif order >= 2:
+            self.y = child
+
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
@@ -95,6 +120,10 @@ class Read_Var(Instruction):
         namespace_id = os.environ.get("CURRENT_NAMESPACE_ID")
         return GMMService.get().get_var(namespace_id, self.key)
 
+    def add_child(self, child: 'Executable', order: int = 0):
+        # A Read_Var cannot have children, so this method does nothing.
+        pass
+
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
@@ -116,6 +145,12 @@ class Write_Var(Instruction):
     def execute(self):
         namespace_id = os.environ.get("CURRENT_NAMESPACE_ID")
         return GMMService.get().set_var(namespace_id, self.key, self.value.execute())
+
+    def add_child(self, child: 'Executable', order: int = 0):
+        if not isinstance(child, Term):
+            raise TypeError("Child must be an instance of Term.")
+
+        self.value = child
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
