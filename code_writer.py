@@ -1,8 +1,8 @@
 from typing import Literal, Union
 from instruction_language.elements.base import Codeblock, Executable, Term
-from instruction_language.elements.conditions import EqualTo, GreaterThan, LessThan
+from instruction_language.elements.conditions import Condition, EqualTo, GreaterThan, LessThan
 from instruction_language.elements.instructions import Read_Pixel, Read_Var, Write_Pixel, Write_Var
-from instruction_language.elements.operators import SUM
+from instruction_language.elements.operators import SUM, Operator
 from instruction_language.elements.control_statements import If, WhileLoop
 
 n_types = Literal["term", "codeblock",
@@ -10,6 +10,77 @@ n_types = Literal["term", "codeblock",
                   "egual_to", "greater_than", "less_than",
                   "sum",
                   "if", "while"]
+
+# todo maybe outsource the types to the language module or so
+
+# shortcut to get all types
+all_types = list(n_types.__args__)
+
+# shortcut for all instruction types
+instruction_types = [t for t in ["read_var", "write_var",
+                                 "read_pixel", "write_pixel"] if t in n_types.__args__]
+# shortcut for all condition types
+condition_types = [t for t in ["egual_to",
+                               "greater_than", "less_than"] if t in n_types.__args__]
+
+# shortcut for all control types
+control_types = [t for t in ["if", "while"] if t in n_types.__args__]
+
+# shortcut for all operator types
+operator_types = [t for t in ["sum"] if t in n_types.__args__]
+
+
+def get_action_space(codeblock: Codeblock) -> list[tuple]:
+    ast, root = codeblock.to_ast()
+
+    action_space = []
+
+    # Helper to get children from the networkx graph
+    def get_children(graph, node):
+        return list(graph.successors(node))
+
+    def traverse(graph, node, order=None):
+
+        if isinstance(node, Codeblock):
+            order = len(node.execution_plan)
+            for n_type in all_types:
+                action_space.append((node, n_type, order))
+        elif isinstance(node, Term):
+            for n_type in all_types:
+                action_space.append((node, n_type, 0))
+        elif isinstance(node, Read_Var):
+            # Read_Var cannot have children
+            pass
+        elif isinstance(node, Write_Var):
+            action_space.append((node, "term", 0))
+        elif isinstance(node, Read_Pixel):
+            action_space.append((node, "term", 0))
+            action_space.append((node, "term", 1))
+        elif isinstance(node, Write_Pixel):
+            action_space.append((node, "term", 0))
+            action_space.append((node, "term", 1))
+            action_space.append((node, "term", 2))
+        elif isinstance(node, (Condition, Operator)):
+            action_space.append((node, "term", 0))
+            action_space.append((node, "term", 1))
+        elif isinstance(node, If):
+            action_space.append((node, "codeblock", 0))
+            for i in range(len(node.condition_code_plan) + 1):
+                action_space.append((node, "condition", i + 1))
+                action_space.append((node, "codeblock", i + 1))
+        elif isinstance(node, WhileLoop):
+            action_space.append((node, "codeblock", 0))
+            action_space.append((node, "condition", 0))
+        else:
+            raise TypeError(
+                f"Unsupported node type: {type(node)}.")
+
+        children = get_children(graph, node)
+        for idx, child in enumerate(children):
+            traverse(graph, child, idx)
+
+    traverse(ast, root)
+    return action_space
 
 
 # todo the ai may not be able to handle string types well for 'carrying_value', so maybe i need to implement storage addresses or string to int mapping
@@ -77,3 +148,11 @@ def new_node(parent: Executable, node_type: n_types, order: int, carrying_value:
 
 def delete_node(parent: Executable, order: int) -> None:
     parent.delete_child(order)
+
+
+def determine_incomplete_nodes(root: Codeblock) -> list[Executable]:
+    # todo maybe implement later, when learning is too difficult/slow
+
+    raise NotImplementedError(
+        "This function is not implemented yet.")
+    pass

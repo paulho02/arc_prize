@@ -1,10 +1,12 @@
 
 from matplotlib import pyplot as plt
 import networkx as nx
+from instruction_language.ast_transformer import hierarchy_plot
+from tests.pytest_setup import invert_program
 
 
 # todo move this somewhere else
-ast, root = epoch_2_plan.to_ast()
+ast, root = invert_program.to_ast()
 plot_blueprint = hierarchy_plot(ast, root)
 labels = nx.get_node_attributes(ast, 'label')
 nx.draw(ast, pos=plot_blueprint, labels=labels, with_labels=True, arrows=True)

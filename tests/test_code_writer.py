@@ -1,3 +1,4 @@
+from typing import Literal
 import pytest
 from instruction_language.elements.base import Codeblock, Term
 from instruction_language.interpreter import InstructionInterpreter
@@ -78,3 +79,32 @@ def test_simple_node_deletion():
 
     code_writer.delete_node(term, order=0)
     assert term.term is None
+
+
+def test_get_action_space(sample_codeblock):
+    """Code writer should return the correct action space for a given code block"""
+    action_space = code_writer.get_action_space(sample_codeblock)
+
+    assert len(action_space) > 0
+    assert all(isinstance(action, tuple) and len(
+        action) == 3 for action in action_space)
+
+    # test first level of action space (note: this covers not the entire action space!)
+    assert (
+        (sample_codeblock, "term", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "codeblock", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "read_var", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "write_var", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "read_pixel", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "write_pixel", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "egual_to", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "greater_than", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "less_than", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "sum", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "if", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "while", len(
+            sample_codeblock.execution_plan)) in action_space
+    )
+
+    print(action_space)
+    print(len(action_space))
