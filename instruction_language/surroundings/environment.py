@@ -1,3 +1,6 @@
+from typing import Union
+
+
 class Environment():
     def __init__(self, env: dict[tuple[int, int], int] = None):
         if env is None:
@@ -96,10 +99,11 @@ class GEMService:
     }
 
     @staticmethod
-    def set(env_key: str, env: Environment):
+    def set(env_key: Union[str, int], env: Environment):
         """
         Set method for the global environment manager.
         """
+        env_key = str(env_key)
         if env_key not in GEMService._envs.keys():
             raise ValueError(f"Environment '{env_key}' does not exist.")
 
@@ -110,8 +114,9 @@ class GEMService:
         GEMService._envs[env_key] = env
 
     @staticmethod
-    def get(env_key: str) -> Environment:
+    def get(env_key: Union[str, int]) -> Environment:
 
+        env_key = str(env_key)
         if env_key not in GEMService._envs.keys():
             raise ValueError(f"Environment '{env_key}' does not exist.")
         return GEMService._envs[env_key]
@@ -131,10 +136,11 @@ class GEMService:
         return GEMService.get("OUTPUT_ENV")
 
     @staticmethod
-    def reset_env(env_key: str):
+    def reset_env(env_key: Union[str, int]):
         """
         Resets the environment with the given key to an empty state.
         """
+        env_key = str(env_key)
         if env_key not in GEMService._envs.keys():
             raise ValueError(f"Environment '{env_key}' does not exist.")
 
@@ -149,16 +155,18 @@ class GEMService:
             GEMService._envs[key] = Environment()
 
     @staticmethod
-    def delete(env_key: str):
+    def delete(env_key: Union[str, int]):
         """
         Deletes the environment with the given key from the global environment manager.
         """
+        env_key = str(env_key)
         if env_key in GEMService._envs.keys():
             del GEMService._envs[env_key]
 
     @staticmethod
-    def add_env(env_key: str):
-        if env_key in GEMService.envs:
+    def add_env(env_key: Union[str, int]):
+        env_key = str(env_key)
+        if env_key in GEMService._envs:
             raise ValueError(f"Environment '{env_key}' already exists.")
 
         GEMService._envs[env_key] = Environment()

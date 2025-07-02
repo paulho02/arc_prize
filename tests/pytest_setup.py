@@ -88,3 +88,92 @@ def sample_codeblock() -> Codeblock:
     """a small program that should invert every pixel from the initial environment and write it to the output environment """
 
     return invert_program
+
+
+invert_program_1_1 = Codeblock()
+# Environment map:
+# 0 = INITIAL_ENV
+# 1 = OUTPUT_ENV
+
+# Memory map:
+# 0 = current_x
+# 1 = current_y
+# 2 = env_size_x
+# 3 = env_size_y
+invert_program_1_1.execution_plan = [
+    Write_Var(3, Term(2)),
+    Write_Var(4, Term(3)),
+    Write_Var(0, Term(0)),
+    Write_Var(1, Term(0)),
+    WhileLoop(
+        LessThan(
+            Term(Read_Var(0)),
+            Term(Read_Var(3)),
+        ),
+        Codeblock(
+            [
+                WhileLoop(
+                    LessThan(
+                        Term(Read_Var(1)),
+                        Term(Read_Var(4)),
+                    ),
+                    Codeblock(
+                        [
+                            If(
+                                Codeblock(
+                                    [
+                                        Write_Pixel(
+                                            1,
+                                            Term(Read_Var(0)),
+                                            Term(Read_Var(1)),
+                                            Term(1),
+                                        )
+                                    ]
+                                ),
+                                (
+                                    EqualTo(
+                                        Term(
+                                            Read_Pixel(
+                                                1,
+                                                Read_Var(0),
+                                                Read_Var(1),
+                                            )
+                                        ),
+                                        Term(1),
+                                    ),
+                                    Codeblock(
+                                        [
+                                            Write_Pixel(
+                                                1,
+                                                Read_Var(0),
+                                                Read_Var(1),
+                                                Term(0),
+                                            )
+                                        ]
+                                    ),
+                                ),
+                            ),
+                            Write_Var(
+                                1,
+                                Term(
+                                    SUM(Term(Read_Var(1)), Term(1))
+                                ),
+                            ),
+                        ]
+                    ),
+                ),
+                Write_Var(
+                    0,
+                    Term(SUM(Term(Read_Var(0)), Term(1))),
+                ),
+                Write_Var(1, Term(0)),
+            ]
+        ),
+    ),
+]
+
+
+@pytest.fixture(scope="session")
+def sample_codeblock_1_1() -> Codeblock:
+    ''' same as sample_codeblock but with storage adresses instead of string keys '''
+    return invert_program_1_1
