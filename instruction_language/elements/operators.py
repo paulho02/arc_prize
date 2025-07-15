@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from typing import Union
+from instruction_language.elements import types
 from instruction_language.elements.base import Executable, Term
 import networkx as nx
 
@@ -55,7 +56,8 @@ class SUM(Operator):
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix
 
-        ast.add_node(self, label=node_label, type="sum", carrying_value=None)
+        ast.add_node(self, label=node_label,
+                     type=types.t2int["sum"], carrying_value=None)
 
         self.term1.to_ast(ast, parent_suffix=suffix,
                           order=0, parent=self)

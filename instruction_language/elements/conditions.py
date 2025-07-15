@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from instruction_language.elements.base import Executable, Term
+from instruction_language.elements import types
 import networkx as nx
 
 
@@ -30,7 +31,7 @@ class Condition(Executable):
         node_label = self.__class__.__name__ + suffix
 
         ast.add_node(self, label=node_label,
-                     type="less_than", carrying_value=None)
+                     type=types.t2int[type], carrying_value=None)
 
         self.term1.to_ast(ast, parent_suffix=suffix,
                           order=0, parent=self)

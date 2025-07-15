@@ -4,30 +4,10 @@ from instruction_language.elements.conditions import Condition, EqualTo, Greater
 from instruction_language.elements.instructions import Read_Pixel, Read_Var, Write_Pixel, Write_Var
 from instruction_language.elements.operators import SUM, Operator
 from instruction_language.elements.control_statements import If, WhileLoop
-
-n_types = Literal["term", "codeblock",
-                  "read_var", "write_var", "read_pixel", "write_pixel",
-                  "egual_to", "greater_than", "less_than",
-                  "sum",
-                  "if", "while"]
-
-# todo maybe outsource the types to the language module or so
-
-# shortcut to get all types
-all_types = list(n_types.__args__)
-
-# shortcut for all instruction types
-instruction_types = [t for t in ["read_var", "write_var",
-                                 "read_pixel", "write_pixel"] if t in n_types.__args__]
-# shortcut for all condition types
-condition_types = [t for t in ["egual_to",
-                               "greater_than", "less_than"] if t in n_types.__args__]
-
-# shortcut for all control types
-control_types = [t for t in ["if", "while"] if t in n_types.__args__]
-
-# shortcut for all operator types
-operator_types = [t for t in ["sum"] if t in n_types.__args__]
+from instruction_language.interpreter import InstructionInterpreter
+from instruction_language.surroundings.environment import Environment, GEMService
+from instruction_language.surroundings.environment import evaluate as env_evaluate
+import instruction_language.elements.types as types  # import n_types, all_types
 
 
 def get_action_space(codeblock: Codeblock) -> list[tuple]:
@@ -43,10 +23,10 @@ def get_action_space(codeblock: Codeblock) -> list[tuple]:
 
         if isinstance(node, Codeblock):
             order = len(node.execution_plan)
-            for n_type in all_types:
+            for n_type in types.all_types:
                 action_space.append((node, n_type, order))
         elif isinstance(node, Term):
-            for n_type in all_types:
+            for n_type in types.all_types:
                 action_space.append((node, n_type, 0))
         elif isinstance(node, Read_Var):
             # Read_Var cannot have children
@@ -82,9 +62,10 @@ def get_action_space(codeblock: Codeblock) -> list[tuple]:
     traverse(ast, root)
     return action_space
 
-
 # todo the ai may not be able to handle string types well for 'carrying_value', so maybe i need to implement storage addresses or string to int mapping
-def new_node(parent: Executable, node_type: n_types, order: int, carrying_value: Union[str, int, None] = None) -> Executable:
+
+
+def new_node(parent: Executable, node_type: types.n_types, order: int, carrying_value: Union[str, int, None] = None) -> Executable:
     """Creates a new node in the code block."""
 
     if node_type == "term":
@@ -120,7 +101,7 @@ def new_node(parent: Executable, node_type: n_types, order: int, carrying_value:
                 f"carrying_value must be an str for node type 'write_pixel', got {type(carrying_value)}")
         new_node = Write_Pixel(carrying_value, None, None, None)
 
-    elif node_type == "egual_to":
+    elif node_type == "equal_to":
         new_node = EqualTo(None, None)
 
     elif node_type == "greater_than":
@@ -156,3 +137,28 @@ def determine_incomplete_nodes(root: Codeblock) -> list[Executable]:
     raise NotImplementedError(
         "This function is not implemented yet.")
     pass
+
+
+def evaluate(codeblock: Codeblock) -> int:
+    # todo make function more generic
+    interpreter = InstructionInterpreter("code_writer_memory_manager_id")
+
+    GEMService.add_env(0)
+    intial_env = Environment.from_list([[1, 1],
+                                        [0, 1]])
+    GEMService.set(0, intial_env)
+    GEMService.add_env(1)
+    output_env = Environment()
+    GEMService.set(1, output_env)
+
+    try:
+        interpreter.execute(codeblock)
+        deviation = env_evaluate(GEMService.get(0), GEMService.get(1))
+        # Sqaured deviation to penalize larger deviations more heavily and guarantee non-negative values
+        deviation = deviation ^ 2
+
+        return 100 - deviation  # Higher is better, so we subtract from 100
+
+    except Exception as e:
+        print(f"Error during execution: {e}")
+        return 0

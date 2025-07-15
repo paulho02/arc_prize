@@ -1,6 +1,7 @@
 from abc import abstractmethod
 import os
 from typing import Union
+from instruction_language.elements import types
 from instruction_language.elements.base import Executable, Term
 from instruction_language.surroundings.environment import GEMService
 from instruction_language.surroundings.memory import GMMService
@@ -31,6 +32,9 @@ class Instruction(Executable):
 class Read_Pixel(Instruction):
     def __init__(self, env_key: Union[str, None], x: Term, y: Term):
         super().__init__()
+        if env_key == types.carrying_value_none_encoding:
+            raise ValueError(
+                f"env_key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")
         self.env_key: Union[str, None] = env_key
         self.x: Union[Term, None] = x
         self.y: Union[Term, None] = y
@@ -62,7 +66,7 @@ class Read_Pixel(Instruction):
         node_label = self.__class__.__name__ + suffix
 
         ast.add_node(self, label=node_label,
-                     type="read_pixel", carrying_value=None)
+                     type=types.t2int["read_pixel"], carrying_value=None)
 
         self.x.to_ast(ast, parent_suffix=suffix,
                       order=0, parent=self)
@@ -76,6 +80,9 @@ class Read_Pixel(Instruction):
 class Write_Pixel(Instruction):
     def __init__(self, env_key: Union[str, None], x: Union[Term, None], y: Union[Term, None], value: Union[Term, None]):
         super().__init__()
+        if env_key == types.carrying_value_none_encoding:
+            raise ValueError(
+                f"env_key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")
         self.env_key: Union[str, None] = env_key
         self.x: Union[Term, None] = x
         self.y: Union[Term, None] = y
@@ -115,7 +122,7 @@ class Write_Pixel(Instruction):
         node_label = self.__class__.__name__ + suffix
 
         ast.add_node(self, label=node_label,
-                     type="write_pixel", carrying_value=None)
+                     type=types.t2int["write_pixel"], carrying_value=None)
 
         self.value.to_ast(ast, parent_suffix=suffix,
                           order=0, parent=self)
@@ -132,6 +139,9 @@ class Write_Pixel(Instruction):
 class Read_Var(Instruction):
     def __init__(self, key):
         super().__init__()
+        if key == types.carrying_value_none_encoding:
+            raise ValueError(
+                f"key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")
         self.key = key
 
     def execute(self):
@@ -151,7 +161,7 @@ class Read_Var(Instruction):
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix
 
-        ast.add_node(self, label=node_label, type="read_var",
+        ast.add_node(self, label=node_label, type=types.t2int["read_var"],
                      carrying_value=self.key)
 
         if parent is not None:
@@ -161,6 +171,9 @@ class Read_Var(Instruction):
 class Write_Var(Instruction):
     def __init__(self, key, value: Union[Term, None]):
         super().__init__()
+        if key == types.carrying_value_none_encoding:
+            raise ValueError(
+                f"key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")
         self.key = key
         self.value: Union[Term, None] = value
 
@@ -184,7 +197,7 @@ class Write_Var(Instruction):
 
         self.value.to_ast(ast, parent_suffix=suffix,
                           order=0, parent=self)
-        ast.add_node(self, label=node_label, type="write_var",
+        ast.add_node(self, label=node_label, type=types.t2int["write_var"],
                      carrying_value=self.key)
 
         if parent is not None:

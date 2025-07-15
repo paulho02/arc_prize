@@ -97,7 +97,7 @@ def test_get_action_space(sample_codeblock):
         (sample_codeblock, "write_var", len(sample_codeblock.execution_plan)) in action_space and
         (sample_codeblock, "read_pixel", len(sample_codeblock.execution_plan)) in action_space and
         (sample_codeblock, "write_pixel", len(sample_codeblock.execution_plan)) in action_space and
-        (sample_codeblock, "egual_to", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "equal_to", len(sample_codeblock.execution_plan)) in action_space and
         (sample_codeblock, "greater_than", len(sample_codeblock.execution_plan)) in action_space and
         (sample_codeblock, "less_than", len(sample_codeblock.execution_plan)) in action_space and
         (sample_codeblock, "sum", len(sample_codeblock.execution_plan)) in action_space and

@@ -4,6 +4,7 @@ from typing import Union
 import networkx as nx
 
 from instruction_language.surroundings.memory import GMMService
+from instruction_language.elements import types
 
 
 class Executable(ABC):
@@ -49,10 +50,10 @@ class Term(Executable):
         node_label = self.__class__.__name__ + suffix
 
         if isinstance(self.term, int):
-            ast.add_node(self, type="term", label=node_label,
+            ast.add_node(self, type=types.t2int["term"], label=node_label,
                          carrying_value=self.term)
         elif isinstance(self.term, Executable):
-            ast.add_node(self, label=node_label, type="term",
+            ast.add_node(self, label=node_label, type=types.t2int["term"],
                          carrying_value=None)
             self.term.to_ast(ast, parent_suffix=suffix,
                              order=0, parent=self)
@@ -102,7 +103,7 @@ class Codeblock(Executable):
         node_label = self.__class__.__name__ + suffix
 
         ast.add_node(self, label=node_label,
-                     type="codeblock", carrying_value=None)
+                     type=types.t2int["codeblock"], carrying_value=None)
 
         # call to_ast for each child
         for i, step in enumerate(self.execution_plan):

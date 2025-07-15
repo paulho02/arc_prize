@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from typing import Union
+from instruction_language.elements import types
 from instruction_language.elements.base import Codeblock, Executable
 from instruction_language.elements.conditions import Condition
 import networkx as nx
@@ -83,7 +84,8 @@ class If(ControlFlowStatement):
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix
 
-        ast.add_node(self, label=node_label, type="if", carrying_value=None)
+        ast.add_node(self, label=node_label,
+                     type=types.t2int["if"], carrying_value=None)
 
         self.default.to_ast(ast, parent_suffix=suffix,
                             order=0, parent=self)
@@ -125,7 +127,8 @@ class WhileLoop(ControlFlowStatement):
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix
 
-        ast.add_node(self, label=node_label, type="while", carrying_value=None)
+        ast.add_node(self, label=node_label,
+                     type=types.t2int["while"], carrying_value=None)
 
         self.condition.to_ast(ast, parent_suffix=suffix,
                               order=0, parent=self)
