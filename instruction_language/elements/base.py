@@ -77,7 +77,9 @@ class Codeblock(Executable):
             try:
                 step.execute()
             except Exception as e:
-                print(f"Exception in step {i} (step type: {type(step)})")
+                print(
+                    # todo implement clean and consistent logging
+                    f"[Interpreter][Codeblock] Exception in step {i} (step type: {type(step)})")
                 raise e
 
     def add_child(self, child: Executable, order: int = 0):
