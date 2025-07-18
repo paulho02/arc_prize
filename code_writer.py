@@ -139,26 +139,30 @@ def determine_incomplete_nodes(root: Codeblock) -> list[Executable]:
     pass
 
 
-def evaluate(codeblock: Codeblock) -> int:
+def evaluate(codeblock: Codeblock) -> float:
     # todo make function more generic
+    """Evaluates the code block and returns a reward based on the output environment."""
     interpreter = InstructionInterpreter("code_writer_memory_manager_id")
 
-    GEMService.add_env(0)
     intial_env = Environment.from_list([[1, 1],
                                         [0, 1]])
     GEMService.set(0, intial_env)
-    GEMService.add_env(1)
     output_env = Environment()
     GEMService.set(1, output_env)
 
     try:
         interpreter.execute(codeblock)
-        deviation = env_evaluate(GEMService.get(0), GEMService.get(1))
+        deviation = env_evaluate(GEMService.get(
+            1), GEMService.get("EXP_OUTPUT_ENV"))
         # Sqaured deviation to penalize larger deviations more heavily and guarantee non-negative values
         deviation = deviation ^ 2
 
-        return 100 - deviation  # Higher is better, so we subtract from 100
+        deviation_score = 100 - deviation  # Higher is better, so we subtract from 100
+        deviation_score = max(0, deviation_score)  # Ensure non-negative
+        reward = deviation_score / 100  # Normalize to [0, 1]
+        return float(reward)
 
     except Exception as e:
-        print(f"Error during execution: {e}")
-        return 0
+        print(
+            f"[code_writer] Error during execution: {e} || -> return min reward")
+        return 0.0
