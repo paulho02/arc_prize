@@ -6,6 +6,9 @@ from torch_geometric.nn import GCNConv, global_mean_pool
 from torch_geometric.utils import from_networkx
 import torch.nn.functional as F
 
+from matplotlib import pyplot as plt
+import networkx as nx
+
 import code_writer
 from instruction_language.ast_transformer import encode_ast_nodes, hierarchy_plot
 from instruction_language.elements import types
@@ -154,7 +157,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(code_predicter.parameters(), lr=1e-3)
     loss_fn = nn.MSELoss()
 
-    num_episodes = 10  # For demonstration
+    num_episodes = 30  # For demonstration
     for episode in range(num_episodes):
 
         ast, root = codeblock.to_ast()
@@ -212,4 +215,10 @@ if __name__ == "__main__":
             f"Episode {episode+1}: Loss={loss.item():.4f}, Reward={reward.item():.4f}, ActionIdx={best_action_idx}")
 
         if episode % 10 == 0:
-            hierarchy_plot(ast, root)
+            plot_blueprint = hierarchy_plot(ast, root)
+            labels = nx.get_node_attributes(ast, 'label')
+            nx.draw(ast, pos=plot_blueprint, labels=labels,
+                    with_labels=True, arrows=True)
+            plt.show()
+
+        # todo in trainings phase: auf endlosschleifen aufpassen
