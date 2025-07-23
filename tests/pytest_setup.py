@@ -3,7 +3,7 @@ from instruction_language.elements.operators import SUM
 from instruction_language.elements.instructions import Read_Pixel, Read_Var, Write_Pixel, Write_Var
 from instruction_language.elements.control_statements import If, WhileLoop
 from instruction_language.elements.conditions import EqualTo, LessThan
-from instruction_language.elements.base import Codeblock, Term
+from instruction_language.elements.base import Codeblock, Constant, NoneType, Term
 from instruction_language.ast_transformer import hierarchy_plot
 from torch_geometric.utils import from_networkx
 
@@ -11,10 +11,13 @@ from torch_geometric.utils import from_networkx
 # todo introduce system variables (like envs size, etc ..)
 invert_program = Codeblock()
 invert_program.execution_plan = [
-    Write_Var("env_size_x", Term(2)),
-    Write_Var("env_size_y", Term(3)),
-    Write_Var("current_x", Term(0)),
-    Write_Var("current_y", Term(0)),
+    # noneType shoudld do nothing
+    NoneType(),
+    NoneType(),
+    Write_Var("env_size_x", Term(Constant(2))),
+    Write_Var("env_size_y", Term(Constant(3))),
+    Write_Var("current_x", Term(Constant(0))),
+    Write_Var("current_y", Term(Constant(0))),
     WhileLoop(
         LessThan(
             Term(Read_Var("current_x")),
@@ -36,7 +39,7 @@ invert_program.execution_plan = [
                                             "OUTPUT_ENV",
                                             Term(Read_Var("current_x")),
                                             Term(Read_Var("current_y")),
-                                            Term(1),
+                                            Term(Constant(1)),
                                         )
                                     ]
                                 ),
@@ -49,7 +52,7 @@ invert_program.execution_plan = [
                                                 Read_Var("current_y"),
                                             )
                                         ),
-                                        Term(1),
+                                        Term(Constant(1)),
                                     ),
                                     Codeblock(
                                         [
@@ -57,7 +60,7 @@ invert_program.execution_plan = [
                                                 "OUTPUT_ENV",
                                                 Read_Var("current_x"),
                                                 Read_Var("current_y"),
-                                                Term(0),
+                                                Term(Constant(0)),
                                             )
                                         ]
                                     ),
@@ -66,7 +69,8 @@ invert_program.execution_plan = [
                             Write_Var(
                                 "current_y",
                                 Term(
-                                    SUM(Term(Read_Var("current_y")), Term(1))
+                                    SUM(Term(Read_Var("current_y")),
+                                        Term(Constant(1)))
                                 ),
                             ),
                         ]
@@ -74,9 +78,9 @@ invert_program.execution_plan = [
                 ),
                 Write_Var(
                     "current_x",
-                    Term(SUM(Term(Read_Var("current_x")), Term(1))),
+                    Term(SUM(Term(Read_Var("current_x")), Term(Constant(1)))),
                 ),
-                Write_Var("current_y", Term(0)),
+                Write_Var("current_y", Term(Constant(0))),
             ]
         ),
     ),
@@ -101,10 +105,10 @@ invert_program_1_1 = Codeblock()
 # 2 = env_size_x
 # 3 = env_size_y
 invert_program_1_1.execution_plan = [
-    Write_Var(3, Term(2)),
-    Write_Var(4, Term(3)),
-    Write_Var(0, Term(0)),
-    Write_Var(1, Term(0)),
+    Write_Var(3, Term(Constant(2))),
+    Write_Var(4, Term(Constant(3))),
+    Write_Var(0, Term(Constant(0))),
+    Write_Var(1, Term(Constant(0))),
     WhileLoop(
         LessThan(
             Term(Read_Var(0)),
@@ -126,7 +130,7 @@ invert_program_1_1.execution_plan = [
                                             1,
                                             Term(Read_Var(0)),
                                             Term(Read_Var(1)),
-                                            Term(1),
+                                            Term(Constant(1))
                                         )
                                     ]
                                 ),
@@ -139,7 +143,7 @@ invert_program_1_1.execution_plan = [
                                                 Read_Var(1),
                                             )
                                         ),
-                                        Term(1),
+                                        Term(Constant(1)),
                                     ),
                                     Codeblock(
                                         [
@@ -147,7 +151,7 @@ invert_program_1_1.execution_plan = [
                                                 1,
                                                 Read_Var(0),
                                                 Read_Var(1),
-                                                Term(0),
+                                                Term(Constant(0)),
                                             )
                                         ]
                                     ),
@@ -156,7 +160,7 @@ invert_program_1_1.execution_plan = [
                             Write_Var(
                                 1,
                                 Term(
-                                    SUM(Term(Read_Var(1)), Term(1))
+                                    SUM(Term(Read_Var(1)), Term(Constant(1)))
                                 ),
                             ),
                         ]
@@ -164,9 +168,9 @@ invert_program_1_1.execution_plan = [
                 ),
                 Write_Var(
                     0,
-                    Term(SUM(Term(Read_Var(0)), Term(1))),
+                    Term(SUM(Term(Read_Var(0)), Term(Constant(1)))),
                 ),
-                Write_Var(1, Term(0)),
+                Write_Var(1, Term(Constant(0))),
             ]
         ),
     ),

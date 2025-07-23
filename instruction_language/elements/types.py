@@ -10,7 +10,8 @@ Only adjust the following fields dynamically with care, as this may lead to unex
 (e.g. the mappings will not be updated)
 '''
 
-n_types = Literal["term", "codeblock",
+n_types = Literal["none_type",
+                  "constant", "term", "codeblock",
                   "read_var", "write_var", "read_pixel", "write_pixel",
                   "equal_to", "greater_than", "less_than",
                   "sum",
@@ -22,6 +23,12 @@ carrying_value_none_encoding: int = 99
 
 # shortcut to get all types
 all_types = list(n_types.__args__)
+
+not_none_types = [t for t in all_types if t != "none_type"]
+
+# shortcut for base types
+base_types = [t for t in ["constant", "term",
+                          "codeblock"] if t in n_types.__args__]
 
 # shortcut for all instruction types
 instruction_types = [t for t in ["read_var", "write_var",

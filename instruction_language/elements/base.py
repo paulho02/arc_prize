@@ -5,6 +5,7 @@ import networkx as nx
 
 from instruction_language.surroundings.memory import GMMService
 from instruction_language.elements import types
+from typing import Sequence
 
 
 class Executable(ABC):
@@ -21,53 +22,93 @@ class Executable(ABC):
         pass
 
     @abstractmethod
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent=None):
         pass
 
 
-class Term(Executable):
-    def __init__(self, term: Union[int, Executable, None]):
-        self.term: Union[int, Executable, None] = term
-
-    def execute(self) -> int:
-        if isinstance(self.term, int):
-            return self.term
-        elif isinstance(self.term, Executable):
-            return self.term.execute()
-        else:
-            raise TypeError(
-                f"Unsupported term type: {type(self.term)}. Expected int or Executable.")
+class NoneType(Executable):
+    def execute(self):
+        print("[Interpreter][NoneType] Warning: Executed NoneType node.")
+        return None
 
     def add_child(self, child: 'Executable', order: int = 0):
-        self.term = child
+        raise NotImplementedError("NoneType cannot have children.")
 
     def delete_child(self, order: int):
-        self.term = None
+        raise NotImplementedError("NoneType cannot have children.")
 
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent=None):
+        """Converts the NoneType to an AST representation."""
+        suffix = f"{parent_suffix}.{order}"
+        node_label = self.__class__.__name__ + suffix
+        ast.add_node(self, label=node_label,
+                     type=types.t2int["none_type"], carrying_value=None)
+        if parent is not None:
+            ast.add_edge(parent, self, order=order)
+
+
+class Constant(Executable):
+    def __init__(self, value: Union[int, str, None] = None):
+        self.value = value
+
+    def execute(self) -> Union[int, str, None]:
+        return self.value
+
+    def add_child(self, child: 'Executable', order: int = 0):
+        raise NotImplementedError("Constant nodes cannot have children.")
+
+    def delete_child(self, order: int):
+        raise NotImplementedError("Constant nodes cannot have children.")
+
+    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent=None):
+        """Converts the constant to an AST representation."""
+        suffix = f"{parent_suffix}.{order}"
+        node_label = self.__class__.__name__ + suffix
+        ast.add_node(self, label=node_label,
+                     type=types.t2int["constant"], carrying_value=self.value)
+        if parent is not None:
+            ast.add_edge(parent, self, order=order)
+
+
+class Term(Executable):
+    def __init__(self, term: Union[Executable, None]):
+        self.child: Union[Executable, None] = term
+
+    def execute(self) -> int:
+        if isinstance(self.child, Executable):
+            return self.child.execute()
+        else:
+            raise TypeError(
+                f"Unsupported term type: {type(self.child)}. Expected Executable.")
+
+    def add_child(self, child: 'Executable', order: int = 0):
+        self.child = child
+
+    def delete_child(self, order: int):
+        self.child = NoneType()
+
+    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent=None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix
 
-        if isinstance(self.term, int):
-            ast.add_node(self, type=types.t2int["term"], label=node_label,
-                         carrying_value=self.term)
-        elif isinstance(self.term, Executable):
-            ast.add_node(self, label=node_label, type=types.t2int["term"],
-                         carrying_value=None)
-            self.term.to_ast(ast, parent_suffix=suffix,
-                             order=0, parent=self)
+        ast.add_node(self, label=node_label, type=types.t2int["term"],
+                     carrying_value=None)
+
+        if isinstance(self.child, Executable):
+            self.child.to_ast(ast, parent_suffix=suffix,
+                              order=0, parent=self)
         else:
             raise TypeError(
-                f"Unsupported term type: {type(self.term)}. Expected int or Executable.")
+                f"Unsupported term type: {type(self.child)}. Expected Executable.")
 
         if parent is not None:
             ast.add_edge(parent, self, order=order)
 
 
 class Codeblock(Executable):
-    def __init__(self, execution_plan: list[Executable] = []):
-        self.execution_plan: list[Executable] = execution_plan
+    def __init__(self, execution_plan: Sequence[Executable] = ()):
+        self.execution_plan: list[Executable] = list(execution_plan)
 
     def execute(self):
         mm = GMMService.get()
@@ -109,7 +150,8 @@ class Codeblock(Executable):
 
         # call to_ast for each child
         for i, step in enumerate(self.execution_plan):
-            step.to_ast(ast, parent_suffix=suffix, order=i, parent=self)
+            if step is not None:
+                step.to_ast(ast, parent_suffix=suffix, order=i, parent=self)
 
         if parent is not None:
             ast.add_edge(parent, self, order=order)

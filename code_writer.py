@@ -1,5 +1,5 @@
 from typing import Literal, Union
-from instruction_language.elements.base import Codeblock, Executable, Term
+from instruction_language.elements.base import Codeblock, Constant, Executable, NoneType, Term
 from instruction_language.elements.conditions import Condition, EqualTo, GreaterThan, LessThan
 from instruction_language.elements.instructions import Read_Pixel, Read_Var, Write_Pixel, Write_Var
 from instruction_language.elements.operators import SUM, Operator
@@ -23,11 +23,17 @@ def get_action_space(codeblock: Codeblock) -> list[tuple]:
 
         if isinstance(node, Codeblock):
             order = len(node.execution_plan)
-            for n_type in types.all_types:
+            for n_type in types.not_none_types:
                 action_space.append((node, n_type, order))
         elif isinstance(node, Term):
-            for n_type in types.all_types:
+            for n_type in types.not_none_types:
                 action_space.append((node, n_type, 0))
+        elif isinstance(node, NoneType):
+            # NoneType nodes cannot have children
+            pass
+        elif isinstance(node, Constant):
+            # Constant nodes cannot have children
+            pass
         elif isinstance(node, Read_Var):
             # Read_Var cannot have children
             pass
@@ -46,11 +52,13 @@ def get_action_space(codeblock: Codeblock) -> list[tuple]:
         elif isinstance(node, If):
             action_space.append((node, "codeblock", 0))
             for i in range(len(node.condition_code_plan) + 1):
-                action_space.append((node, "condition", i + 1))
+                for n_type in types.condition_types:
+                    action_space.append((node, n_type, i))
                 action_space.append((node, "codeblock", i + 1))
         elif isinstance(node, WhileLoop):
             action_space.append((node, "codeblock", 0))
-            action_space.append((node, "condition", 0))
+            for n_type in types.condition_types:
+                action_space.append((node, n_type, 0))
         else:
             raise TypeError(
                 f"Unsupported node type: {type(node)}.")
@@ -68,16 +76,25 @@ def get_action_space(codeblock: Codeblock) -> list[tuple]:
 def new_node(parent: Executable, node_type: types.n_types, order: int, carrying_value: Union[str, int, None] = None) -> Executable:
     """Creates a new node in the code block."""
 
-    if node_type == "term":
+    if node_type == "none_type":
+        raise ValueError("Creation of 'none_type' nodes is not allowed.")
+    elif node_type == "term":
         if not isinstance(carrying_value, Union[int, None]):
             raise TypeError(
                 f"carrying_value must be an int for node type 'term', got {type(carrying_value)}")
-        new_node = Term(carrying_value)
+        new_node = Term(NoneType())
+
+    elif node_type == "constant":
+        if not isinstance(carrying_value, Union[int, str, None]):
+            raise TypeError(
+                f"carrying_value must be an int or str for node type 'constant', got {type(carrying_value)}")
+        new_node = Constant(carrying_value)
 
     elif node_type == "codeblock":
         new_node = Codeblock([])
 
     elif node_type == "read_var":
+        # todo make carrying_value of type int
         if not isinstance(carrying_value, Union[str, None]):
             raise TypeError(
                 f"carrying_value must be an str for node type 'read_var', got {type(carrying_value)}")
@@ -87,37 +104,38 @@ def new_node(parent: Executable, node_type: types.n_types, order: int, carrying_
         if not isinstance(carrying_value, Union[str, None]):
             raise TypeError(
                 f"carrying_value must be an str for node type 'write_var', got {type(carrying_value)}")
-        new_node = Write_Var(carrying_value, None)
+        new_node = Write_Var(carrying_value, NoneType())
 
     elif node_type == "read_pixel":
         if not isinstance(carrying_value, Union[str, None]):
             raise TypeError(
                 f"carrying_value must be an str for node type 'read_pixel', got {type(carrying_value)}")
-        new_node = Read_Pixel(carrying_value, None, None)
+        new_node = Read_Pixel(carrying_value, NoneType(), NoneType())
 
     elif node_type == "write_pixel":
         if not isinstance(carrying_value, Union[str, None]):
             raise TypeError(
                 f"carrying_value must be an str for node type 'write_pixel', got {type(carrying_value)}")
-        new_node = Write_Pixel(carrying_value, None, None, None)
+        new_node = Write_Pixel(
+            carrying_value, NoneType(), NoneType(), NoneType())
 
     elif node_type == "equal_to":
-        new_node = EqualTo(None, None)
+        new_node = EqualTo(NoneType(), NoneType())
 
     elif node_type == "greater_than":
-        new_node = GreaterThan(None, None)
+        new_node = GreaterThan(NoneType(), NoneType())
 
     elif node_type == "less_than":
-        new_node = LessThan(None, None)
+        new_node = LessThan(NoneType(), NoneType())
 
     elif node_type == "sum":
-        new_node = SUM(None, None)
+        new_node = SUM(NoneType(), NoneType())
 
     elif node_type == "if":
-        new_node = If(None)
+        new_node = If(Codeblock([]))
 
     elif node_type == "while":
-        new_node = WhileLoop(None, None)
+        new_node = WhileLoop(NoneType(), Codeblock([]))
 
     else:
         raise ValueError(

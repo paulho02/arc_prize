@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Union
 from instruction_language.elements import types
-from instruction_language.elements.base import Codeblock, Executable
+from instruction_language.elements.base import Codeblock, Executable, NoneType
 from instruction_language.elements.conditions import Condition
 import networkx as nx
 
@@ -70,7 +70,7 @@ class If(ControlFlowStatement):
 
     def delete_child(self, order: int):
         if order <= 0:
-            self.default = None
+            self.default = Codeblock([])
         elif order >= 1:
             index = order - 1
             if index < len(self.condition_code_plan):
@@ -101,7 +101,7 @@ class If(ControlFlowStatement):
 
 
 class WhileLoop(ControlFlowStatement):
-    def __init__(self, condition: Condition, codeblock: Codeblock):
+    def __init__(self, condition: Union[Condition, NoneType], codeblock: Codeblock):
         super().__init__()
         self.condition = condition
         self.codeblock = codeblock
@@ -119,8 +119,8 @@ class WhileLoop(ControlFlowStatement):
             raise TypeError("Child must be either a Condition or a Codeblock.")
 
     def delete_child(self, order: int):
-        self.condition = None
-        self.codeblock = None
+        self.condition = NoneType()
+        self.codeblock = Codeblock([])
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""

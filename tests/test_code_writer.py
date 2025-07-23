@@ -1,6 +1,6 @@
 from typing import Literal
 import pytest
-from instruction_language.elements.base import Codeblock, Term
+from instruction_language.elements.base import Codeblock, NoneType, Term
 from instruction_language.interpreter import InstructionInterpreter
 from instruction_language.surroundings.environment import Environment, GEMService
 from tests.pytest_setup import sample_codeblock
@@ -25,21 +25,21 @@ def test_simple_new_node():
 
     code_writer.new_node(
         parent=write_pixel,
-        node_type="term",
+        node_type="constant",
         order=0,
         carrying_value=1
     )
 
     code_writer.new_node(
         parent=write_pixel,
-        node_type="term",
+        node_type="constant",
         order=1,
         carrying_value=0
     )
 
     code_writer.new_node(
         parent=write_pixel,
-        node_type="term",
+        node_type="constant",
         order=2,
         carrying_value=0
     )
@@ -65,7 +65,7 @@ def test_simple_node_deletion():
     )
 
     assert isinstance(term, Term)
-    assert term.term is None
+    assert isinstance(term.child, NoneType)
 
     child_term = code_writer.new_node(
         parent=term,
@@ -74,11 +74,11 @@ def test_simple_node_deletion():
         carrying_value=2
     )
 
-    assert isinstance(term.term, Term)
-    assert term.term == child_term
+    assert isinstance(term.child, Term)
+    assert term.child == child_term
 
     code_writer.delete_node(term, order=0)
-    assert term.term is None
+    assert isinstance(term.child, NoneType)
 
 
 def test_get_action_space(sample_codeblock):

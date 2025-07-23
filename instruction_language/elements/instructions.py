@@ -2,7 +2,7 @@ from abc import abstractmethod
 import os
 from typing import Union
 from instruction_language.elements import types
-from instruction_language.elements.base import Executable, Term
+from instruction_language.elements.base import Constant, Executable, NoneType, Term
 from instruction_language.surroundings.environment import GEMService
 from instruction_language.surroundings.memory import GMMService
 import networkx as nx
@@ -30,14 +30,14 @@ class Instruction(Executable):
 
 
 class Read_Pixel(Instruction):
-    def __init__(self, env_key: Union[str, None], x: Term, y: Term):
+    def __init__(self, env_key: Union[str, None], x: Union[Term, Constant, NoneType, None], y: Union[Term, Constant, NoneType, None]):
         super().__init__()
         if env_key == types.carrying_value_none_encoding:
             raise ValueError(
                 f"env_key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")
         self.env_key: Union[str, None] = env_key
-        self.x: Union[Term, None] = x
-        self.y: Union[Term, None] = y
+        self.x: Union[Term, Constant, NoneType, None] = x
+        self.y: Union[Term, Constant, NoneType, None] = y
 
     def execute(self):
         x = self.x.execute()
@@ -46,8 +46,8 @@ class Read_Pixel(Instruction):
         return env.get(x, y)
 
     def add_child(self, child: 'Executable', order: int = 0):
-        if not isinstance(child, Term):
-            raise TypeError("Child must be an instance of Term.")
+        if not isinstance(child, Term) and not isinstance(child, Constant):
+            raise TypeError("Child must be an instance of Term or Constant.")
 
         if order <= 0:
             self.x = child
@@ -56,9 +56,9 @@ class Read_Pixel(Instruction):
 
     def delete_child(self, order: int):
         if order <= 0:
-            self.x = None
+            self.x = NoneType()
         elif order >= 1:
-            self.y = None
+            self.y = NoneType()
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
@@ -78,15 +78,15 @@ class Read_Pixel(Instruction):
 
 
 class Write_Pixel(Instruction):
-    def __init__(self, env_key: Union[str, None], x: Union[Term, None], y: Union[Term, None], value: Union[Term, None]):
+    def __init__(self, env_key: Union[str, None], x: Union[Term, Constant, NoneType, None], y: Union[Term, Constant, NoneType, None], value: Union[Term, Constant, NoneType, None]):
         super().__init__()
         if env_key == types.carrying_value_none_encoding:
             raise ValueError(
                 f"env_key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")
         self.env_key: Union[str, None] = env_key
-        self.x: Union[Term, None] = x
-        self.y: Union[Term, None] = y
-        self.value: Union[Term, None] = value
+        self.x: Union[Term, Constant, NoneType, None] = x
+        self.y: Union[Term, Constant, NoneType, None] = y
+        self.value: Union[Term, Constant, NoneType, None] = value
 
     # todo make initial_env write protected
 
@@ -98,8 +98,8 @@ class Write_Pixel(Instruction):
         env.set(x, y, value)
 
     def add_child(self, child: 'Executable', order: int = 0):
-        if not isinstance(child, Term):
-            raise TypeError("Child must be an instance of Term.")
+        if not isinstance(child, Term) and not isinstance(child, Constant):
+            raise TypeError("Child must be an instance of Term or Constant.")
 
         if order <= 0:
             self.value = child
@@ -110,11 +110,11 @@ class Write_Pixel(Instruction):
 
     def delete_child(self, order: int):
         if order <= 0:
-            self.value = None
+            self.value = NoneType()
         elif order == 1:
-            self.x = None
+            self.x = NoneType()
         elif order >= 2:
-            self.y = None
+            self.y = NoneType()
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
@@ -169,26 +169,26 @@ class Read_Var(Instruction):
 
 
 class Write_Var(Instruction):
-    def __init__(self, key, value: Union[Term, None]):
+    def __init__(self, key, value: Union[Term, Constant, NoneType, None]):
         super().__init__()
         if key == types.carrying_value_none_encoding:
             raise ValueError(
                 f"key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")
         self.key = key
-        self.value: Union[Term, None] = value
+        self.value: Union[Term, Constant, NoneType, None] = value
 
     def execute(self):
         namespace_id = os.environ.get("CURRENT_NAMESPACE_ID")
         return GMMService.get().set_var(namespace_id, self.key, self.value.execute())
 
     def add_child(self, child: 'Executable', order: int = 0):
-        if not isinstance(child, Term):
-            raise TypeError("Child must be an instance of Term.")
+        if not isinstance(child, Term) and not isinstance(child, Constant):
+            raise TypeError("Child must be an instance of Term or Constant.")
 
         self.value = child
 
     def delete_child(self, order: int):
-        self.value = None
+        self.value = NoneType()
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""

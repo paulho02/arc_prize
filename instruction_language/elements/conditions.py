@@ -1,11 +1,12 @@
 from abc import abstractmethod
-from instruction_language.elements.base import Executable, Term
+from typing import Union
+from instruction_language.elements.base import Executable, NoneType, Term
 from instruction_language.elements import types
 import networkx as nx
 
 
 class Condition(Executable):
-    def __init__(self, term1: Term, term2: Term):
+    def __init__(self, term1: Union[Term, NoneType], term2: Union[Term, NoneType]):
         self.term1 = term1
         self.term2 = term2
 
@@ -21,9 +22,9 @@ class Condition(Executable):
 
     def delete_child(self, order: int):
         if order <= 0:
-            self.term1 = None
+            self.term1 = NoneType()
         elif order >= 1:
-            self.term2 = None
+            self.term2 = NoneType()
 
     def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None, type: str = "condition"):
         """Converts the term to an AST representation."""
@@ -43,7 +44,7 @@ class Condition(Executable):
 
 
 class LessThan(Condition):
-    def __init__(self, term1: Term, term2: Term):
+    def __init__(self, term1: Union[Term, NoneType], term2: Union[Term, NoneType]):
         super().__init__(term1, term2)
 
     def execute(self):
@@ -55,7 +56,7 @@ class LessThan(Condition):
 
 
 class EqualTo(Condition):
-    def __init__(self, term1: Term, term2: Term):
+    def __init__(self, term1: Union[Term, NoneType], term2: Union[Term, NoneType]):
         super().__init__(term1, term2)
 
     def execute(self):
@@ -70,7 +71,7 @@ class EqualTo(Condition):
 
 
 class GreaterThan(Condition):
-    def __init__(self, term1: Term, term2: Term):
+    def __init__(self, term1: Union[Term, NoneType], term2: Union[Term, NoneType]):
         super().__init__(term1, term2)
 
     def execute(self):
