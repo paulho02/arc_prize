@@ -5,6 +5,8 @@ from instruction_language.elements.base import Codeblock, Executable, NoneType
 from instruction_language.elements.conditions import Condition
 import networkx as nx
 
+from instruction_language.surroundings.interpreter_settings import GISManager
+
 
 class ControlFlowStatement(Executable):
     def __init__(self):
@@ -107,8 +109,14 @@ class WhileLoop(ControlFlowStatement):
         self.codeblock = codeblock
 
     def execute(self):
+        max_iterations = GISManager.get_setting("max_loop_iterations")
+        current_iteration = 0
         while self.condition.execute():
+            if current_iteration >= max_iterations:
+                raise RuntimeError(
+                    f"Max loop iterations reached: {max_iterations}. Consider adjusting the 'max_loop_iterations' setting.")
             self.codeblock.execute()
+            current_iteration += 1
 
     def add_child(self, child: Executable, order: int = 0):
         if isinstance(child, Condition):
