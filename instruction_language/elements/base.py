@@ -139,8 +139,11 @@ class Codeblock(Executable):
         else:
             raise IndexError("Order out of range for execution plan.")
 
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+    def to_ast(self, ast: Union[nx.DiGraph, None] = None, parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the codeblock to an AST representation."""
+
+        if ast is None:
+            ast = nx.DiGraph()
 
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix
