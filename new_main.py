@@ -117,39 +117,6 @@ if __name__ == "__main__":
     GEMService.set("EXP_OUTPUT_ENV", expected_output_env)
 
     # Initialize Codeblock
-    codeblock = Codeblock()
-
-    # =========================================================================================================================
-
-    # codeblock = Codeblock()
-    # ast, root = codeblock.to_ast()
-
-    # action_space = code_writer.get_action_space(codeblock)
-    # action_tensor = actions_to_tensor(action_space)
-
-    # action_embeddings = action_encoder(action_tensor)
-    # print(f"[Action Embeddings] shape: {action_embeddings.shape}")
-    # # print(f"[Action Embeddings] view: {action_embeddings[0]}")
-
-    # encode_ast_nodes(ast)
-    # data = from_networkx(ast)
-    # x = data.x
-    # edge_index = data.edge_index
-    # # Assuming single graph
-    # batch = torch.zeros(x.size(0), dtype=torch.long)
-
-    # state = graph_encoder(x, edge_index, batch)
-    # print(f"[State Embedding] shape: {state.shape}")
-    # # print(f"[State Embedding] view: {state[0]}")
-
-    # result = code_predicter(state[0], action_embeddings[0])
-
-    # print(f"[Code Prediction] shape: {result.shape}")
-    # print(f"[Code Prediction] action score: {result.item()}")
-
-    # =========================================================================================================================
-
-    # Example: RL training loop for CodePredicter
 
     # Configurable parameter: how much to rely on model vs. random (epsilon-greedy)
     rely_on_model_weight = 0.7  # 1.0 = always model, 0.0 = always random

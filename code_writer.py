@@ -51,7 +51,7 @@ def get_action_space(codeblock: Codeblock) -> list[tuple]:
             action_space.append((node, "term", 1))
         elif isinstance(node, If):
             action_space.append((node, "codeblock", 0))
-            for i in range(len(node.condition_code_plan) + 1):
+            for i in range(1, len(node.condition_code_plan) + 1):
                 for n_type in types.condition_types:
                     action_space.append((node, n_type, i))
                 action_space.append((node, "codeblock", i + 1))

@@ -35,7 +35,7 @@ class If(ControlFlowStatement):
         super().__init__()
         self.default = default
         # typing says condition_code_plan can take infinite tuples of (Condition, Codeblock), but can be None (which is necessary during the code_writing process)
-        self.condition_code_plan: list[tuple[Union[Condition, None], Union[Condition, None]]] = list(
+        self.condition_code_plan: list[tuple[Union[Condition, NoneType, None], Union[Codeblock, NoneType, None]]] = list(
             args)
 
     def execute(self):
@@ -50,12 +50,16 @@ class If(ControlFlowStatement):
     def add_child(self, child: Executable, order: int = 0):
         if order <= 0:
             if not isinstance(child, Codeblock):
-                raise TypeError("Default child must be a Codeblock.")
+                raise TypeError(
+                    f"Default child must be a Codeblock, got {type(child).__name__} with order:{order} instead.")
             self.default.add_child(child)
         elif order >= 1:
             index = order - 1
-            code_condition_tuple = self.condition_code_plan.get(
-                index, (None, None))
+
+            if index < len(self.condition_code_plan):
+                code_condition_tuple = self.condition_code_plan[index]
+            else:
+                code_condition_tuple = (NoneType(), NoneType())
 
             # assign the child to according pos in the tuple (and leave the other one as it is)
             if isinstance(child, Condition):
