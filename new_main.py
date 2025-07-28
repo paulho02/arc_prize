@@ -124,68 +124,98 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(code_predicter.parameters(), lr=1e-3)
     loss_fn = nn.MSELoss()
 
-    num_episodes = 30  # For demonstration
+    loss_tracking = []
+    num_episodes = 100
+    num_steps = 50
     for episode in range(num_episodes):
+        episode_loss = 0.0
+        codeblock = Codeblock()
+        codeblock.execution_plan = []
 
-        ast, root = codeblock.to_ast()
-        encode_ast_nodes(ast)
-        data = from_networkx(ast)
-        x = data.x
-        edge_index = data.edge_index
-        batch = torch.zeros(x.size(0), dtype=torch.long)
-        state = graph_encoder(x, edge_index, batch)
+        start_ast, start_root = codeblock.to_ast()
+        print("--------")
+        print(codeblock)
+        print(start_ast)
+        print(start_root)
+        print("--------")
+        plot_blueprint = hierarchy_plot(start_ast, start_root)
+        labels = nx.get_node_attributes(start_ast, 'label')
+        nx.draw(start_ast, pos=plot_blueprint, labels=labels,
+                with_labels=True, arrows=True)
+        plt.title(f"Episode {episode+1}")
+        # plt.show()
 
-        action_space = code_writer.get_action_space(codeblock)
-        action_tensor = actions_to_tensor(action_space)
-        action_embeddings = action_encoder(action_tensor)
+        for step in range(num_steps):
 
-        # Choose action: epsilon-greedy
-        if random.random() < rely_on_model_weight:
-            # Model chooses best action
-            scores = []
-            for i in range(action_embeddings.size(0)):
-                score = code_predicter(state[0], action_embeddings[i])
-                scores.append(score.item())
-            best_action_idx = int(torch.tensor(scores).argmax())
-        else:
-            # Random action
-            best_action_idx = random.randint(0, action_embeddings.size(0) - 1)
+            ast, root = codeblock.to_ast()
+            encode_ast_nodes(ast)
+            data = from_networkx(ast)
+            x = data.x
+            edge_index = data.edge_index
+            batch = torch.zeros(x.size(0), dtype=torch.long)
+            state = graph_encoder(x, edge_index, batch)
 
-        # Apply action to get next state (simulate environment step)
-        # (Assume you have a function: next_codeblock = apply_action(codeblock, chosen_action))
-        # (Assume you have a function: reward = reward_function(next_codeblock))
-        # For demonstration, we'll just use the same state and a dummy reward
-        # Replace the following two lines with your environment logic:
+            action_space = code_writer.get_action_space(codeblock)
+            action_tensor = actions_to_tensor(action_space)
+            action_embeddings = action_encoder(action_tensor)
 
-        chosen_action = action_space[best_action_idx]
-        chosen_parent, chosen_type, chosen_order = chosen_action
-        code_writer.new_node(chosen_parent, chosen_type, chosen_order)
-        reward = code_writer.evaluate(codeblock)
-        reward = torch.tensor([reward])
-        # next_codeblock = apply_action(codeblock, chosen_action)
-        # reward = reward_function(next_codeblock)
-        # reward = torch.tensor([random.uniform(0, 1)])  # Dummy reward
+            # Choose action: epsilon-greedy
+            if random.random() < rely_on_model_weight:
+                # Model chooses best action
+                scores = []
+                for i in range(action_embeddings.size(0)):
+                    score = code_predicter(state[0], action_embeddings[i])
+                    scores.append(score.item())
+                best_action_idx = int(torch.tensor(scores).argmax())
+            else:
+                # Random action
+                best_action_idx = random.randint(
+                    0, action_embeddings.size(0) - 1)
 
-        # Forward pass for chosen action
-        pred_score = code_predicter(
-            state[0], action_embeddings[best_action_idx])
+            chosen_action = action_space[best_action_idx]
+            chosen_parent, chosen_type, chosen_order = chosen_action
+            code_writer.new_node(chosen_parent, chosen_type, chosen_order)
+            reward = code_writer.evaluate(codeblock)
+            reward = torch.tensor([reward])
+            # next_codeblock = apply_action(codeblock, chosen_action)
+            # reward = reward_function(next_codeblock)
+            # reward = torch.tensor([random.uniform(0, 1)])  # Dummy reward
 
-        # Loss (MSE between predicted score and reward)
-        loss = loss_fn(pred_score, reward)
+            # Forward pass for chosen action
+            pred_score = code_predicter(
+                state[0], action_embeddings[best_action_idx])
 
-        # Backward pass
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            # Loss (MSE between predicted score and reward)
+            loss = loss_fn(pred_score, reward)
+            episode_loss = loss.item()
+
+            # Backward pass
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+        loss_tracking.append(episode_loss)
 
         print(
-            f"Episode {episode+1}: Loss={loss.item():.4f}, Reward={reward.item():.4f}, ActionIdx={best_action_idx}")
+            f"Episode {episode+1}: Loss={episode_loss:.4f}")
 
-        if episode % 10 == 0:
-            plot_blueprint = hierarchy_plot(ast, root)
-            labels = nx.get_node_attributes(ast, 'label')
-            nx.draw(ast, pos=plot_blueprint, labels=labels,
-                    with_labels=True, arrows=True)
-            plt.show()
+        # if step % 10 == 0:
+        end_ast, end_root = codeblock.to_ast()
+        print("--------")
+        print(codeblock)
+        print(end_ast)
+        print(end_root)
+        print("--------")
+        plot_blueprint = hierarchy_plot(end_ast, end_root)
+        labels = nx.get_node_attributes(end_ast, 'label')
+        nx.draw(end_ast, pos=plot_blueprint, labels=labels,
+                with_labels=True, arrows=True)
+        plt.title(f"Episode {episode+1}")
+        # plt.show()
 
-        # todo in trainings phase: auf endlosschleifen aufpassen
+    plt.figure()
+    plt.scatter(range(1, len(loss_tracking) + 1), loss_tracking)
+    plt.xlabel("Episode")
+    plt.ylabel("Loss")
+    plt.title("Loss Tracking per Episode")
+    plt.show()
