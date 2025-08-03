@@ -1,3 +1,4 @@
+import logging
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,6 +9,7 @@ import torch.nn.functional as F
 
 from matplotlib import pyplot as plt
 import networkx as nx
+from tqdm import tqdm
 
 import code_writer
 from instruction_language.ast_transformer import encode_ast_nodes, hierarchy_plot
@@ -17,6 +19,13 @@ import random
 
 from instruction_language.interpreter import InstructionInterpreter
 from instruction_language.surroundings.environment import Environment, GEMService
+from logging_setup import setup_logger
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
+
+logger = setup_logger("main", level=logging.INFO,
+                      log_file="logs/main.log", to_console=False)
 
 
 class GraphEncoder(nn.Module):
@@ -133,16 +142,12 @@ if __name__ == "__main__":
         codeblock.execution_plan = []
 
         start_ast, start_root = codeblock.to_ast()
-        print("--------")
-        print(codeblock)
-        print(start_ast)
-        print(start_root)
-        print("--------")
-        plot_blueprint = hierarchy_plot(start_ast, start_root)
-        labels = nx.get_node_attributes(start_ast, 'label')
-        nx.draw(start_ast, pos=plot_blueprint, labels=labels,
-                with_labels=True, arrows=True)
-        plt.title(f"Episode {episode+1}")
+
+        # plot_blueprint = hierarchy_plot(start_ast, start_root)
+        # labels = nx.get_node_attributes(start_ast, 'label')
+        # nx.draw(start_ast, pos=plot_blueprint, labels=labels,
+        #         with_labels=True, arrows=True)
+        # plt.title(f"Episode {episode+1}")
         # plt.show()
 
         for step in range(num_steps):
@@ -196,26 +201,42 @@ if __name__ == "__main__":
 
         loss_tracking.append(episode_loss)
 
-        print(
-            f"Episode {episode+1}: Loss={episode_loss:.4f}")
-
         # if step % 10 == 0:
         end_ast, end_root = codeblock.to_ast()
-        print("--------")
-        print(codeblock)
-        print(end_ast)
-        print(end_root)
-        print("--------")
-        plot_blueprint = hierarchy_plot(end_ast, end_root)
-        labels = nx.get_node_attributes(end_ast, 'label')
-        nx.draw(end_ast, pos=plot_blueprint, labels=labels,
-                with_labels=True, arrows=True)
-        plt.title(f"Episode {episode+1}")
+        logger.info("========")
+        logger.info(
+            f"Episode {episode+1}: Loss={episode_loss:.4f}")
+        logger.info("--------")
+        logger.info(codeblock)
+        logger.info(end_ast)
+        logger.info(end_root)
+        logger.info("--------")
+        GEMService.get_initial_env().plot(0, print_func=logger.info)
+        GEMService.get_output_env().plot(1, print_func=logger.info)
+        logger.info("========")
+        # plot_blueprint = hierarchy_plot(end_ast, end_root)
+        # labels = nx.get_node_attributes(end_ast, 'label')
+        # nx.draw(end_ast, pos=plot_blueprint, labels=labels,
+        #         with_labels=True, arrows=True)
+        # plt.title(f"Episode {episode+1}")
         # plt.show()
 
     plt.figure()
-    plt.scatter(range(1, len(loss_tracking) + 1), loss_tracking)
+    x_vals = np.arange(1, len(loss_tracking) + 1)
+    y_vals = np.array(loss_tracking)
+
+    # Normal x-axis, logarithmic y-axis
+    plt.scatter(x_vals, y_vals)
+    plt.yscale('log')
     plt.xlabel("Episode")
-    plt.ylabel("Loss")
+    plt.ylabel("Loss (log scale)")
     plt.title("Loss Tracking per Episode")
+
+    # Linear regression line
+    x_vals_reshape = x_vals.reshape(-1, 1)
+    reg = LinearRegression().fit(x_vals_reshape, np.log(y_vals))
+    y_pred = np.exp(reg.predict(x_vals_reshape))
+    plt.plot(x_vals, y_pred, color='red', label='Linear Regression')
+    plt.legend()
+
     plt.show()

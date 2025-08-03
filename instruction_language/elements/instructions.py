@@ -1,8 +1,10 @@
 from abc import abstractmethod
+import logging
 import os
 from typing import Union
 from instruction_language.elements import types
 from instruction_language.elements.base import Constant, Executable, NoneType, Term
+from instruction_language.logging_setup import setup_logger
 from instruction_language.surroundings.environment import GEMService
 from instruction_language.surroundings.memory import GMMService
 import networkx as nx
@@ -32,6 +34,8 @@ class Instruction(Executable):
 class Read_Pixel(Instruction):
     def __init__(self, env_key: Union[str, None], x: Union[Term, Constant, NoneType, None], y: Union[Term, Constant, NoneType, None]):
         super().__init__()
+        self.logger = setup_logger("Read_Pixel", level=logging.INFO)
+
         if env_key == types.carrying_value_none_encoding:
             raise ValueError(
                 f"env_key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")
@@ -80,6 +84,8 @@ class Read_Pixel(Instruction):
 class Write_Pixel(Instruction):
     def __init__(self, env_key: Union[str, None], x: Union[Term, Constant, NoneType, None], y: Union[Term, Constant, NoneType, None], value: Union[Term, Constant, NoneType, None]):
         super().__init__()
+        self.logger = setup_logger("Write_Pixel", level=logging.INFO)
+
         if env_key == types.carrying_value_none_encoding:
             raise ValueError(
                 f"env_key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")
@@ -139,6 +145,8 @@ class Write_Pixel(Instruction):
 class Read_Var(Instruction):
     def __init__(self, key):
         super().__init__()
+        self.logger = setup_logger("Read_Var", level=logging.INFO)
+
         if key == types.carrying_value_none_encoding:
             raise ValueError(
                 f"key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")
@@ -171,6 +179,8 @@ class Read_Var(Instruction):
 class Write_Var(Instruction):
     def __init__(self, key, value: Union[Term, Constant, NoneType, None]):
         super().__init__()
+        self.logger = setup_logger("Write_Var", level=logging.INFO)
+
         if key == types.carrying_value_none_encoding:
             raise ValueError(
                 f"key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")

@@ -1,11 +1,11 @@
 import os
 import uuid
 
+
 class MemoryManager:
     def __init__(self):
         self.namespace_register: dict[dict] = {}
         self.namespace_stack: list[str] = []
-
 
     def get_var(self, namespace_uuid, key):
         self._collect_garbage(namespace_uuid)
@@ -15,7 +15,7 @@ class MemoryManager:
             if key in namespace:
                 return namespace[key]
         return None
-    
+
     def set_var(self, namespace_uuid, key, value):
         self._collect_garbage(namespace_uuid)
 
@@ -39,7 +39,7 @@ class GMMService:
     The purpose of this class is to manage instances of the MemoryManager so the it is not necessary to pass the instances through each codeblock of an execution plan.
     The only thing the caller needs to care about is to use unique identifier to prevent unexpected state behavior in the program.
     """
-    
+
     _memory_manager_register: dict[str, MemoryManager] = {}
 
     @staticmethod
@@ -52,7 +52,7 @@ class GMMService:
             GMMService._memory_manager_register[id] = MemoryManager()
 
         return GMMService._memory_manager_register[id]
-    
+
     @staticmethod
     def delete(id=os.environ.get("MEMORY_MANAGER_ID")):
         if id in GMMService._memory_manager_register.keys():

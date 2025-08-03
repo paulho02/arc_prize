@@ -1,4 +1,7 @@
+import logging
 from typing import Union
+
+from instruction_language.logging_setup import setup_logger
 
 
 class Environment():
@@ -52,17 +55,17 @@ class Environment():
 
         return environment
 
-    def plot(self, title=None):
+    def plot(self, title=None, print_func=print):
         title = title if title else str(self)
         env_list = self.to_list()
 
-        print("------------------")
-        print(f"Env '{title}':")
+        print_func("------------------")
+        print_func(f"Env '{title}':")
         for row in env_list:
             for col in row:
-                print(f" {col} ", end="")
-            print()
-        print("------------------")
+                print_func(f" {col} ", end="")
+            print_func()
+        print_func("------------------")
 
 
 def evaluate(env1: Environment, env2: Environment) -> int:
@@ -172,15 +175,15 @@ class GEMService:
         GEMService._envs[env_key] = Environment()
 
     @staticmethod
-    def print_initial_env():
+    def print_initial_env(print_func=print):
         """
         Print method for specific hardcoded environment.
         """
-        GEMService.get_initial_env().plot("INITIAL_ENV")
+        GEMService.get_initial_env().plot("INITIAL_ENV", print_func=print_func)
 
     @staticmethod
-    def print_output_env():
+    def print_output_env(print_func=print):
         """
         Print method for specific hardcoded environment.
         """
-        GEMService.get_output_env().plot(title="OUTPUT_ENV")
+        GEMService.get_output_env().plot(title="OUTPUT_ENV", print_func=print_func)

@@ -1,3 +1,4 @@
+import logging
 from typing import Literal, Union
 from instruction_language.elements.base import Codeblock, Constant, Executable, NoneType, Term
 from instruction_language.elements.conditions import Condition, EqualTo, GreaterThan, LessThan
@@ -8,6 +9,10 @@ from instruction_language.interpreter import InstructionInterpreter
 from instruction_language.surroundings.environment import Environment, GEMService
 from instruction_language.surroundings.environment import evaluate as env_evaluate
 import instruction_language.elements.types as types  # import n_types, all_types
+from logging_setup import setup_logger
+
+logger = setup_logger(
+    "code_writer", level=logging.INFO, to_console=False)
 
 
 def get_action_space(codeblock: Codeblock) -> list[tuple]:
@@ -181,6 +186,6 @@ def evaluate(codeblock: Codeblock) -> float:
         return float(reward)
 
     except Exception as e:
-        print(
-            f"[code_writer] Error during execution: {e} || -> return min reward")
+        logger.warning(
+            f"Error ({type(e).__name__}) during execution: {e} || -> return min reward")
         return 0.0

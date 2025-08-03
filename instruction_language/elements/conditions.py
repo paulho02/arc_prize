@@ -1,12 +1,17 @@
 from abc import abstractmethod
+import logging
 from typing import Union
 from instruction_language.elements.base import Executable, NoneType, Term
 from instruction_language.elements import types
 import networkx as nx
 
+from instruction_language.logging_setup import setup_logger
+
 
 class Condition(Executable):
     def __init__(self, term1: Union[Term, NoneType], term2: Union[Term, NoneType]):
+        self.logger = setup_logger("Condition", level=logging.INFO)
+
         self.term1 = term1
         self.term2 = term2
 
@@ -46,6 +51,7 @@ class Condition(Executable):
 class LessThan(Condition):
     def __init__(self, term1: Union[Term, NoneType], term2: Union[Term, NoneType]):
         super().__init__(term1, term2)
+        self.logger = setup_logger("LessThan", level=logging.INFO)
 
     def execute(self):
         return self.term1.execute() < self.term2.execute()
@@ -58,6 +64,7 @@ class LessThan(Condition):
 class EqualTo(Condition):
     def __init__(self, term1: Union[Term, NoneType], term2: Union[Term, NoneType]):
         super().__init__(term1, term2)
+        self.logger = setup_logger("EqualTo", level=logging.INFO)
 
     def execute(self):
         return (
@@ -73,6 +80,7 @@ class EqualTo(Condition):
 class GreaterThan(Condition):
     def __init__(self, term1: Union[Term, NoneType], term2: Union[Term, NoneType]):
         super().__init__(term1, term2)
+        self.logger = setup_logger("GreaterThan", level=logging.INFO)
 
     def execute(self):
         return self.term1.execute() > self.term2.execute()

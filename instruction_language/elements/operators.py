@@ -1,8 +1,11 @@
 from abc import abstractmethod
+import logging
 from typing import Union
 from instruction_language.elements import types
 from instruction_language.elements.base import Executable, NoneType, Term
 import networkx as nx
+
+from instruction_language.logging_setup import setup_logger
 
 
 class Operator(Executable):
@@ -29,6 +32,7 @@ class Operator(Executable):
 class SUM(Operator):
     def __init__(self, term1: Union[Term, NoneType, None], term2: Union[Term, NoneType, None]):
         super().__init__(term1, term2)
+        self.logger = setup_logger("SUM", level=logging.INFO)
 
         self.term1: Union[Term, NoneType, None] = term1
         self.term2: Union[Term, NoneType, None] = term2

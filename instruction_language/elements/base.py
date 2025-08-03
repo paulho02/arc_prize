@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
+import logging
 import os
 from typing import Union
 import networkx as nx
 
+from instruction_language.logging_setup import setup_logger
 from instruction_language.surroundings.memory import GMMService
 from instruction_language.elements import types
 from typing import Sequence
@@ -27,8 +29,11 @@ class Executable(ABC):
 
 
 class NoneType(Executable):
+    def __init__(self):
+        self.logger = setup_logger("NoneType", level=logging.ERROR)
+
     def execute(self):
-        print("[Interpreter][NoneType] Warning: Executed NoneType node.")
+        self.logger.warning("Executed NoneType node.")
         return None
 
     def add_child(self, child: 'Executable', order: int = 0):
@@ -49,6 +54,8 @@ class NoneType(Executable):
 
 class Constant(Executable):
     def __init__(self, value: Union[int, str, None] = None):
+        self.logger = setup_logger("Constant", level=logging.INFO)
+
         self.value = value
 
     def execute(self) -> Union[int, str, None]:
@@ -72,6 +79,8 @@ class Constant(Executable):
 
 class Term(Executable):
     def __init__(self, term: Union[Executable, None]):
+        self.logger = setup_logger("Term", level=logging.INFO)
+
         self.child: Union[Executable, None] = term
 
     def execute(self) -> int:
@@ -108,6 +117,8 @@ class Term(Executable):
 
 class Codeblock(Executable):
     def __init__(self, execution_plan: Sequence[Executable] = ()):
+        self.logger = setup_logger("Codeblock", level=logging.CRITICAL)
+
         self.execution_plan: list[Executable] = list(execution_plan)
 
     def execute(self):
@@ -118,9 +129,8 @@ class Codeblock(Executable):
             try:
                 step.execute()
             except Exception as e:
-                print(
-                    # todo implement clean and consistent logging
-                    f"[Interpreter][Codeblock] Exception in step {i} (step type: {type(step)})")
+                self.logger.error(
+                    f"Exception in step {i} (step type: {type(step)})")
                 raise e
 
     def add_child(self, child: Executable, order: int = 0):

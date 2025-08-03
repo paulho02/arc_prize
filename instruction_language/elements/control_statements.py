@@ -1,10 +1,12 @@
 from abc import abstractmethod
+import logging
 from typing import Union
 from instruction_language.elements import types
 from instruction_language.elements.base import Codeblock, Executable, NoneType
 from instruction_language.elements.conditions import Condition
 import networkx as nx
 
+from instruction_language.logging_setup import setup_logger
 from instruction_language.surroundings.interpreter_settings import GISManager
 
 
@@ -33,6 +35,8 @@ class If(ControlFlowStatement):
     # todo maybe outsource the condition_code_plan to a separate class
     def __init__(self, default: Codeblock, *args: tuple[Condition, Codeblock]):
         super().__init__()
+        self.logger = setup_logger("If", level=logging.INFO)
+
         self.default = default
         # typing says condition_code_plan can take infinite tuples of (Condition, Codeblock), but can be None (which is necessary during the code_writing process)
         self.condition_code_plan: list[tuple[Union[Condition, NoneType, None], Union[Codeblock, NoneType, None]]] = list(
@@ -109,6 +113,8 @@ class If(ControlFlowStatement):
 class WhileLoop(ControlFlowStatement):
     def __init__(self, condition: Union[Condition, NoneType], codeblock: Codeblock):
         super().__init__()
+        self.logger = setup_logger("WhileLoop", level=logging.INFO)
+
         self.condition = condition
         self.codeblock = codeblock
 
