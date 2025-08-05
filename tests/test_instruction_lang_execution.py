@@ -63,10 +63,8 @@ def test_interpreter_locking():
 
 
 def test_max_loop_iterations_setting():
-
-    test_settings = {
-        "max_loop_iterations": 5
-    }
+    test_settings = GISManager.get("default")
+    test_settings["max_loop_iterations"] = 5
 
     interpreter = InstructionInterpreter(
         memory_manager_id='test_mm_id', settings=test_settings)

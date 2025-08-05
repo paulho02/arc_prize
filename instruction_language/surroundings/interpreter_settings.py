@@ -85,5 +85,6 @@ class GISManager:
 
 
 GISManager.set("default", {
-    "max_loop_iterations": 5000,
+    "max_loop_iterations": 2500,
+    "max_run_time_seconds": 30
 })

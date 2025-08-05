@@ -1,4 +1,5 @@
 
+from concurrent.futures import ThreadPoolExecutor
 import os
 from typing import Any, Union
 from instruction_language.elements.base import Codeblock
@@ -19,7 +20,10 @@ class InstructionInterpreter():
         os.environ["MEMORY_MANAGER_ID"] = self.memory_manager_id
 
         try:
-            code.execute()
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(code.execute)
+                timeout = GISManager.get_setting("max_run_time_seconds")
+                future.result(timeout=timeout)
         finally:
             # post execution clean
             # GEMService.reset_all_envs()
