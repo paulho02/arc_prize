@@ -25,7 +25,7 @@ class Operator(Executable):
         pass
 
     @abstractmethod
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent: str = None):
         pass
 
 
@@ -55,7 +55,7 @@ class SUM(Operator):
         elif order >= 1:
             self.term2 = NoneType()
 
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix

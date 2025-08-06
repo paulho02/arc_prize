@@ -27,7 +27,7 @@ class ControlFlowStatement(Executable):
         pass
 
     @abstractmethod
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent: str = None):
         pass
 
 
@@ -89,7 +89,7 @@ class If(ControlFlowStatement):
                 raise IndexError(
                     f"No condition_code_plan at index {index}. Current length: {len(self.condition_code_plan)}.")
 
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix
@@ -140,7 +140,7 @@ class WhileLoop(ControlFlowStatement):
         self.condition = NoneType()
         self.codeblock = Codeblock([])
 
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix

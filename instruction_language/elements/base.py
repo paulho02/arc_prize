@@ -24,7 +24,7 @@ class Executable(ABC):
         pass
 
     @abstractmethod
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent=None):
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent=None):
         pass
 
 
@@ -42,7 +42,7 @@ class NoneType(Executable):
     def delete_child(self, order: int):
         raise NotImplementedError("NoneType cannot have children.")
 
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent=None):
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent=None):
         """Converts the NoneType to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix
@@ -67,7 +67,7 @@ class Constant(Executable):
     def delete_child(self, order: int):
         raise NotImplementedError("Constant nodes cannot have children.")
 
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent=None):
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent=None):
         """Converts the constant to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix
@@ -96,7 +96,7 @@ class Term(Executable):
     def delete_child(self, order: int):
         self.child = NoneType()
 
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent=None):
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent=None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix
