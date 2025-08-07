@@ -71,6 +71,20 @@ class CodePredicter(nn.Module):
         return self.fc(x)
 
 
+class CarryingValuePredicter(nn.Module):
+    def __init__(self, state_dim, action_dim, hidden_dim=64):
+        super(CarryingValuePredicter, self).__init__()
+        self.fc = nn.Sequential(
+            nn.Linear(state_dim + action_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 1)  # Output: predicted carrying value
+        )
+
+    def forward(self, state_embedding, action_embedding):
+        x = torch.cat([state_embedding, action_embedding], dim=-1)
+        return self.fc(x)
+
+
 node2int = []
 
 
@@ -113,6 +127,14 @@ if __name__ == "__main__":
         in_channels=ohc_feature_len, hidden_channels=state_encoding_dim)
     code_predicter = CodePredicter(
         state_dim=state_encoding_dim, action_dim=action_encoding_dim)
+    carrying_value_predicter = CarryingValuePredicter(
+        state_dim=state_encoding_dim, action_dim=action_encoding_dim)
+    optimizer = torch.optim.Adam(list(code_predicter.parameters()) +
+                                 list(action_encoder.parameters()) +
+                                 list(graph_encoder.parameters()) +
+                                 list(carrying_value_predicter.parameters()),
+                                 lr=1e-3)
+    loss_fn = nn.MSELoss()
 
     # Initialize Environments
     GEMService.add_env(0)
@@ -179,8 +201,21 @@ if __name__ == "__main__":
 
             chosen_action = action_space[best_action_idx]
             chosen_parent, chosen_type, chosen_order = chosen_action
-            code_writer.new_node(chosen_parent, chosen_type, chosen_order)
-            reward = code_writer.evaluate(codeblock)
+
+            if random.random() < rely_on_model_weight:
+                # Use model to predict carrying value
+                carrying_value = carrying_value_predicter(
+                    state[0], action_embeddings[best_action_idx])
+                carrying_value = carrying_value.item()
+            else:
+                # maximum of 50 vars and envs
+                carrying_value = random.randint(0, 50)
+
+            # todo make carrying value integer in all nodes
+            code_writer.new_node(chosen_parent, chosen_type,
+                                 chosen_order, carrying_value)
+            reward, skip_episode = code_writer.evaluate(codeblock)
+            episode_reward = reward
             reward = torch.tensor([reward])
             # next_codeblock = apply_action(codeblock, chosen_action)
             # reward = reward_function(next_codeblock)
