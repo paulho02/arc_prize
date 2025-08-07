@@ -35,7 +35,8 @@ def encode_ast_nodes(ast):
 
         # Get carrying_value as float
         cv = node_data.get("carrying_value")
-        carrying_value = torch.tensor([float(cv) if cv is not None else 0.0])
+        carrying_value = torch.tensor(
+            [float(cv) if cv is not None else types.carrying_value_none_encoding])
 
         # Combine them into one feature vector
         node_data["x"] = torch.cat([type_onehot, carrying_value])

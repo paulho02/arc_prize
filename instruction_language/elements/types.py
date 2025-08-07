@@ -18,7 +18,7 @@ n_types = Literal["none_type",
                   "if", "while"]
 
 # encoding to tell pytorch when a carrying value is not set
-carrying_value_none_encoding: int = 99
+carrying_value_none_encoding: int = 999
 
 
 # shortcut to get all types
