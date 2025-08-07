@@ -1,3 +1,5 @@
+import argparse
+from datetime import datetime
 import logging
 import torch
 import torch.nn as nn
@@ -22,10 +24,15 @@ from instruction_language.surroundings.environment import Environment, GEMServic
 from logging_setup import setup_logger
 import numpy as np
 from sklearn.linear_model import LinearRegression
+import pickle
+import os
 
 
 logger = setup_logger("main", level=logging.INFO,
                       log_file="logs/main.log", to_console=False)
+
+if not os.path.exists("storage"):
+    os.makedirs("storage")
 
 
 class GraphEncoder(nn.Module):
@@ -99,19 +106,19 @@ def actions_to_tensor(action_space):
     return torch.tensor(action_tensor, dtype=torch.float)
 
 
-# def execute_codeblock(codeblock: Codeblock):
-#     initial_env = Environment.from_list([[1, 1, 1],
-#                                         [0, 1, 1]])
-#     GEMService.set(0, initial_env)
-#     GEMService.set(1, Environment())
+parser = argparse.ArgumentParser(
+    description="Codewriter RL Training Program")
 
-#     interpreter = InstructionInterpreter(memory_manager_id='production_mm_id')
+# Add a string parameter --checkpoint
+parser.add_argument(
+    '--checkpoint',
+    type=str,
+    default=None,
+    help='Path to checkpoint directory to continue training from. If not set, training starts fresh.'
+)
 
-#     try:
-#         interpreter.execute(codeblock)
-
-#     except Exception as e:
-#         print(f"Codeblock execution failed with: {e} || -> return min reward")
+args = parser.parse_args()
+checkpoint = args.checkpoint
 
 
 if __name__ == "__main__":
@@ -147,18 +154,30 @@ if __name__ == "__main__":
                                                 [1, 0, 0]])
     GEMService.set("EXP_OUTPUT_ENV", expected_output_env)
 
-    # Initialize Codeblock
+    start_episode = 0
+    reward_tracking = []
+
+    # Load checkpoint if provided
+    if checkpoint is not None:
+        loaded_checkpoint = torch.load(f"storage/{checkpoint}.pth")
+
+        start_episode = loaded_checkpoint["episode"]
+        reward_tracking = loaded_checkpoint["stats_tracking_obj"]["reward_tracking"]
+
+        action_encoder.load_state_dict(loaded_checkpoint["action_encoder"])
+        graph_encoder.load_state_dict(loaded_checkpoint["graph_encoder"])
+        code_predicter.load_state_dict(loaded_checkpoint["code_predicter"])
+        carrying_value_predicter.load_state_dict(
+            loaded_checkpoint["carrying_value_predicter"])
+
+        optimizer.load_state_dict(loaded_checkpoint["optimizer"])
 
     # Configurable parameter: how much to rely on model vs. random (epsilon-greedy)
     rely_on_model_weight = 0.7  # 1.0 = always model, 0.0 = always random
-
-    optimizer = torch.optim.Adam(code_predicter.parameters(), lr=1e-3)
-    loss_fn = nn.MSELoss()
-
-    loss_tracking = []
     num_episodes = 100
-    num_steps = 50
-    for episode in range(num_episodes):
+    num_steps = 65
+
+    for episode in tqdm(range(start_episode, num_episodes), initial=start_episode, total=num_episodes):
         episode_loss = 0.0
         codeblock = Codeblock()
         codeblock.execution_plan = []
@@ -249,6 +268,20 @@ if __name__ == "__main__":
         GEMService.get_initial_env().plot(0, print_func=logger.info)
         GEMService.get_output_env().plot(1, print_func=logger.info)
         logger.info("========")
+
+        if episode % 100 == 0:
+            torch.save({
+                "episode": episode,
+                "stats_tracking_obj": {
+                    "reward_tracking": reward_tracking
+                },
+                "action_encoder": action_encoder.state_dict(),
+                "graph_encoder": graph_encoder.state_dict(),
+                "code_predicter": code_predicter.state_dict(),
+                "carrying_value_predicter": carrying_value_predicter.state_dict(),
+                "optimizer": optimizer.state_dict()
+            }, f"storage/episode_{episode+1}.pth")
+
         # plot_blueprint = hierarchy_plot(end_ast, end_root)
         # labels = nx.get_node_attributes(end_ast, 'label')
         # nx.draw(end_ast, pos=plot_blueprint, labels=labels,
