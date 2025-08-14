@@ -2,7 +2,7 @@ import logging
 from typing import Literal, Union
 from instruction_language.elements.base import Codeblock, Constant, Executable, NoneType, Term
 from instruction_language.elements.conditions import Condition, EqualTo, GreaterThan, LessThan
-from instruction_language.elements.instructions import Read_Pixel, Read_Var, Write_Pixel, Write_Var
+from instruction_language.elements.instructions import Read_Pixel, Read_Var, ReadPixelInput, ReadPixelOutput, Write_Pixel, Write_Var, WritePixelOutput
 from instruction_language.elements.operators import SUM, Operator
 from instruction_language.elements.control_statements import If, WhileLoop
 from instruction_language.interpreter import InstructionInterpreter
@@ -84,12 +84,12 @@ def new_node(parent: Executable, node_type: types.n_types, order: int, carrying_
     if node_type == "none_type":
         raise ValueError("Creation of 'none_type' nodes is not allowed.")
     elif node_type == "term":
-        if not isinstance(carrying_value, Union[int, None]):
-            raise TypeError(
-                f"carrying_value must be an int for node type 'term', got {type(carrying_value)}")
         new_node = Term(NoneType())
 
     elif node_type == "constant":
+        carrying_value = int(
+            carrying_value) if carrying_value is not None else None
+
         if not isinstance(carrying_value, Union[int, str, None]):
             raise TypeError(
                 f"carrying_value must be an int or str for node type 'constant', got {type(carrying_value)}")
@@ -99,30 +99,31 @@ def new_node(parent: Executable, node_type: types.n_types, order: int, carrying_
         new_node = Codeblock([])
 
     elif node_type == "read_var":
-        # todo make carrying_value of type int
-        if not isinstance(carrying_value, Union[str, None]):
+        carrying_value = int(
+            carrying_value) if carrying_value is not None else None
+
+        if not isinstance(carrying_value, int):
             raise TypeError(
-                f"carrying_value must be an str for node type 'read_var', got {type(carrying_value)}")
+                f"carrying_value must be an int for node type 'read_var', got {type(carrying_value)}")
         new_node = Read_Var(carrying_value)
 
     elif node_type == "write_var":
-        if not isinstance(carrying_value, Union[str, None]):
+        carrying_value = int(
+            carrying_value) if carrying_value is not None else None
+
+        if not isinstance(carrying_value, int):
             raise TypeError(
-                f"carrying_value must be an str for node type 'write_var', got {type(carrying_value)}")
+                f"carrying_value must be an int for node type 'write_var', got {type(carrying_value)}")
         new_node = Write_Var(carrying_value, NoneType())
 
-    elif node_type == "read_pixel":
-        if not isinstance(carrying_value, Union[str, None]):
-            raise TypeError(
-                f"carrying_value must be an str for node type 'read_pixel', got {type(carrying_value)}")
-        new_node = Read_Pixel(carrying_value, NoneType(), NoneType())
+    elif node_type == "read_pixel_input":
+        new_node = ReadPixelInput(NoneType(), NoneType())
 
-    elif node_type == "write_pixel":
-        if not isinstance(carrying_value, Union[str, None]):
-            raise TypeError(
-                f"carrying_value must be an str for node type 'write_pixel', got {type(carrying_value)}")
-        new_node = Write_Pixel(
-            carrying_value, NoneType(), NoneType(), NoneType())
+    elif node_type == "read_pixel_output":
+        new_node = ReadPixelOutput(NoneType(), NoneType())
+
+    elif node_type == "write_pixel_output":
+        new_node = WritePixelOutput(NoneType(), NoneType(), NoneType())
 
     elif node_type == "equal_to":
         new_node = EqualTo(NoneType(), NoneType())
@@ -162,30 +163,40 @@ def determine_incomplete_nodes(root: Codeblock) -> list[Executable]:
     pass
 
 
-def evaluate(codeblock: Codeblock) -> float:
+def evaluate(codeblock: Codeblock) -> tuple[float, bool]:
     # todo make function more generic
-    """Evaluates the code block and returns a reward based on the output environment."""
+    """Evaluates the code block and returns a reward based on the output environment.
+
+    Returns a tuple (reward, skip_episode):
+    - reward: A float value representing the reward for the code block execution.
+    - skip_episode: A boolean indicating if the execution should skip the current episode.
+    """
     interpreter = InstructionInterpreter("code_writer_memory_manager_id")
 
-    intial_env = Environment.from_list([[1, 1],
+    initial_env = Environment.from_list([[1, 1],
                                         [0, 1]])
-    GEMService.set(0, intial_env)
+    GEMService.set("INITIAL_ENV", initial_env)
     output_env = Environment()
-    GEMService.set(1, output_env)
+    GEMService.set("OUTPUT_ENV", output_env)
 
     try:
         interpreter.execute(codeblock)
         deviation = env_evaluate(GEMService.get(
-            1), GEMService.get("EXP_OUTPUT_ENV"))
+            "OUTPUT_ENV"), GEMService.get("EXP_OUTPUT_ENV"))
         # Sqaured deviation to penalize larger deviations more heavily and guarantee non-negative values
         deviation = deviation ^ 2
 
         deviation_score = 100 - deviation  # Higher is better, so we subtract from 100
         deviation_score = max(0, deviation_score)  # Ensure non-negative
         reward = deviation_score / 100  # Normalize to [0, 1]
-        return float(reward)
+        return float(reward), False
+
+    except TimeoutError as e:
+        logger.warning(
+            f"TimeoutError during execution: {e} || -> return min reward")
+        return 0.0, True
 
     except Exception as e:
         logger.warning(
             f"Error ({type(e).__name__}) during execution: {e} || -> return min reward")
-        return 0.0
+        return 0.0, False

@@ -11,16 +11,21 @@ import code_writer
 
 def test_simple_new_node():
     """Code writer should create a program that writes a pixel at (0, 0) with value 1"""
-    GEMService.set("INITIAL_ENV", Environment())
+
+    # env '0' represents INPUT_ENV
+    # env '1' represents OUTPUT_ENV
+    GEMService.add_env(0)
+    GEMService.add_env(1)
+
+    GEMService.set(0, Environment())
 
     codeblock = Codeblock()
     codeblock.execution_plan = []
 
     write_pixel = code_writer.new_node(
         parent=codeblock,
-        node_type="write_pixel",
+        node_type="write_pixel_output",
         order=0,
-        carrying_value="OUTPUT_ENV"
     )
 
     code_writer.new_node(
@@ -47,7 +52,7 @@ def test_simple_new_node():
     interpreter = InstructionInterpreter(__file__)
     interpreter.execute(codeblock)
 
-    output_env = GEMService.get_output_env()
+    output_env = GEMService.get("OUTPUT_ENV")
     assert output_env.get(0, 0) == 1
 
 
@@ -95,8 +100,9 @@ def test_get_action_space(sample_codeblock):
         (sample_codeblock, "codeblock", len(sample_codeblock.execution_plan)) in action_space and
         (sample_codeblock, "read_var", len(sample_codeblock.execution_plan)) in action_space and
         (sample_codeblock, "write_var", len(sample_codeblock.execution_plan)) in action_space and
-        (sample_codeblock, "read_pixel", len(sample_codeblock.execution_plan)) in action_space and
-        (sample_codeblock, "write_pixel", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "read_pixel_input", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "read_pixel_output", len(sample_codeblock.execution_plan)) in action_space and
+        (sample_codeblock, "write_pixel_output", len(sample_codeblock.execution_plan)) in action_space and
         (sample_codeblock, "equal_to", len(sample_codeblock.execution_plan)) in action_space and
         (sample_codeblock, "greater_than", len(sample_codeblock.execution_plan)) in action_space and
         (sample_codeblock, "less_than", len(sample_codeblock.execution_plan)) in action_space and

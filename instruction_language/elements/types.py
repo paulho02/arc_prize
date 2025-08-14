@@ -12,7 +12,7 @@ Only adjust the following fields dynamically with care, as this may lead to unex
 
 n_types = Literal["none_type",
                   "constant", "term", "codeblock",
-                  "read_var", "write_var", "read_pixel", "write_pixel",
+                  "read_var", "write_var", "read_pixel_input", "read_pixel_output", "write_pixel_output",
                   "equal_to", "greater_than", "less_than",
                   "sum",
                   "if", "while"]
@@ -32,7 +32,7 @@ base_types = [t for t in ["constant", "term",
 
 # shortcut for all instruction types
 instruction_types = [t for t in ["read_var", "write_var",
-                                 "read_pixel", "write_pixel"] if t in n_types.__args__]
+                                 "read_pixel_input", "read_pixel_output", "write_pixel_output"] if t in n_types.__args__]
 # shortcut for all condition types
 condition_types = [t for t in ["equal_to",
                                "greater_than", "less_than"] if t in n_types.__args__]

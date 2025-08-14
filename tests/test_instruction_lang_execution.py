@@ -34,13 +34,10 @@ def test_basic_execution(sample_codeblock):
 
 
 def test_basic_execution_1_1(sample_codeblock_1_1):
-    GEMService.add_env(0)
     initial_env = Environment.from_list([[1, 1, 1],
                                         [0, 1, 1]])
     print(GEMService._envs)
-    GEMService.set(0, initial_env)
-
-    GEMService.add_env(1)
+    GEMService.set("INITIAL_ENV", initial_env)
 
     interpreter = InstructionInterpreter(memory_manager_id='hello_word_mm_id')
     interpreter.execute(sample_codeblock_1_1)

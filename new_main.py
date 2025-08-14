@@ -148,11 +148,6 @@ if __name__ == "__main__":
     loss_fn = nn.MSELoss()
 
     # Initialize Environments
-    GEMService.add_env(0)
-    initial_env = Environment.from_list([[1, 1, 1],
-                                        [0, 1, 1]])
-    GEMService.set(0, initial_env)
-    GEMService.add_env(1)
     GEMService.add_env("EXP_OUTPUT_ENV")
     expected_output_env = Environment.from_list([[0, 0, 0],
                                                 [1, 0, 0]])
@@ -258,7 +253,6 @@ if __name__ == "__main__":
             pred_score = code_predicter(
                 state[0], action_embeddings[best_action_idx])
 
-            # Loss (MSE between predicted score and reward)
             loss = loss_fn(pred_score, reward)
             episode_loss = loss.item()
 
@@ -267,7 +261,10 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
 
-        loss_tracking.append(episode_loss)
+            if skip_episode:
+                logger.warning(
+                    f"Skipping episode {episode+1} due execution timeouts.")
+                break
 
         # if step % 10 == 0:
         end_ast, end_root = codeblock.to_ast()
@@ -282,8 +279,8 @@ if __name__ == "__main__":
         logger.info(f"Threads: {proc.num_threads()}")
         logger.info(f"Speicher: {proc.memory_info().rss / 1024 / 1024:.2f} MB")
         logger.info("--------")
-        GEMService.get_initial_env().plot(0, print_func=logger.info)
-        GEMService.get_output_env().plot(1, print_func=logger.info)
+        GEMService.get_initial_env().plot("INITIAL_ENV", print_func=logger.info)
+        GEMService.get_output_env().plot("OUTPUT_ENV", print_func=logger.info)
         logger.info("========")
 
         tracking_obj["reward_tracking"].append(episode_reward)

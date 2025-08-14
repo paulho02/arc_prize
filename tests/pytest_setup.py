@@ -1,6 +1,6 @@
 import pytest
 from instruction_language.elements.operators import SUM
-from instruction_language.elements.instructions import Read_Pixel, Read_Var, Write_Pixel, Write_Var
+from instruction_language.elements.instructions import Read_Pixel, Read_Var, ReadPixelInput, ReadPixelOutput, Write_Pixel, Write_Var, WritePixelOutput
 from instruction_language.elements.control_statements import If, WhileLoop
 from instruction_language.elements.conditions import EqualTo, LessThan
 from instruction_language.elements.base import Codeblock, Constant, NoneType, Term
@@ -35,8 +35,7 @@ invert_program.execution_plan = [
                             If(
                                 Codeblock(
                                     [
-                                        Write_Pixel(
-                                            "OUTPUT_ENV",
+                                        WritePixelOutput(
                                             Term(Read_Var("current_x")),
                                             Term(Read_Var("current_y")),
                                             Term(Constant(1)),
@@ -46,20 +45,18 @@ invert_program.execution_plan = [
                                 (
                                     EqualTo(
                                         Term(
-                                            Read_Pixel(
-                                                "INITIAL_ENV",
-                                                Read_Var("current_x"),
-                                                Read_Var("current_y"),
+                                            ReadPixelInput(
+                                                Term(Read_Var("current_x")),
+                                                Term(Read_Var("current_y")),
                                             )
                                         ),
                                         Term(Constant(1)),
                                     ),
                                     Codeblock(
                                         [
-                                            Write_Pixel(
-                                                "OUTPUT_ENV",
-                                                Read_Var("current_x"),
-                                                Read_Var("current_y"),
+                                            WritePixelOutput(
+                                                Term(Read_Var("current_x")),
+                                                Term(Read_Var("current_y")),
                                                 Term(Constant(0)),
                                             )
                                         ]
@@ -126,8 +123,7 @@ invert_program_1_1.execution_plan = [
                             If(
                                 Codeblock(
                                     [
-                                        Write_Pixel(
-                                            1,
+                                        WritePixelOutput(
                                             Term(Read_Var(0)),
                                             Term(Read_Var(1)),
                                             Term(Constant(1))
@@ -137,20 +133,18 @@ invert_program_1_1.execution_plan = [
                                 (
                                     EqualTo(
                                         Term(
-                                            Read_Pixel(
-                                                1,
-                                                Read_Var(0),
-                                                Read_Var(1),
+                                            ReadPixelInput(
+                                                Term(Read_Var(0)),
+                                                Term(Read_Var(1))
                                             )
                                         ),
                                         Term(Constant(1)),
                                     ),
                                     Codeblock(
                                         [
-                                            Write_Pixel(
-                                                1,
-                                                Read_Var(0),
-                                                Read_Var(1),
+                                            WritePixelOutput(
+                                                Term(Read_Var(0)),
+                                                Term(Read_Var(1)),
                                                 Term(Constant(0)),
                                             )
                                         ]

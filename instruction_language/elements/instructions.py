@@ -32,14 +32,14 @@ class Instruction(Executable):
 
 
 class Read_Pixel(Instruction):
-    def __init__(self, env_key: Union[str, None], x: Union[Term, Constant, NoneType, None], y: Union[Term, Constant, NoneType, None]):
+    def __init__(self, env_key: Union[int, str, None], x: Union[Term, Constant, NoneType, None], y: Union[Term, Constant, NoneType, None]):
         super().__init__()
         self.logger = setup_logger("Read_Pixel", level=logging.INFO)
 
         if env_key == types.carrying_value_none_encoding:
             raise ValueError(
                 f"env_key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")
-        self.env_key: Union[str, None] = env_key
+        self.env_key: Union[int, str, None] = env_key
         self.x: Union[Term, Constant, NoneType, None] = x
         self.y: Union[Term, Constant, NoneType, None] = y
 
@@ -64,13 +64,13 @@ class Read_Pixel(Instruction):
         elif order >= 1:
             self.y = NoneType()
 
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent: str = None, n_type: str = ""):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix
 
         ast.add_node(self, label=node_label,
-                     type=types.t2int["read_pixel"], carrying_value=None)
+                     type=types.t2int[n_type], carrying_value=None)
 
         self.x.to_ast(ast, parent_suffix=suffix,
                       order=0, parent=self)
@@ -81,15 +81,37 @@ class Read_Pixel(Instruction):
             ast.add_edge(parent, self, order=order)
 
 
+class ReadPixelInput(Read_Pixel):
+    FIXED_ENV_KEY = "INITIAL_ENV"
+
+    def __init__(self, x: Union[Term, Constant, NoneType, None], y: Union[Term, Constant, NoneType, None]):
+        super().__init__(self.FIXED_ENV_KEY, x, y)
+
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent: str = None, n_type: str = ""):
+        """Converts the term to an AST representation."""
+        super().to_ast(ast, parent_suffix, order, parent, n_type="read_pixel_input")
+
+
+class ReadPixelOutput(Read_Pixel):
+    FIXED_ENV_KEY = "OUTPUT_ENV"
+
+    def __init__(self, x: Union[Term, Constant, NoneType, None], y: Union[Term, Constant, NoneType, None]):
+        super().__init__(self.FIXED_ENV_KEY, x, y)
+
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent: str = None, n_type: str = ""):
+        """Converts the term to an AST representation."""
+        super().to_ast(ast, parent_suffix, order, parent, n_type="read_pixel_output")
+
+
 class Write_Pixel(Instruction):
-    def __init__(self, env_key: Union[str, None], x: Union[Term, Constant, NoneType, None], y: Union[Term, Constant, NoneType, None], value: Union[Term, Constant, NoneType, None]):
+    def __init__(self, env_key: Union[int, str, None], x: Union[Term, Constant, NoneType, None], y: Union[Term, Constant, NoneType, None], value: Union[Term, Constant, NoneType, None]):
         super().__init__()
         self.logger = setup_logger("Write_Pixel", level=logging.INFO)
 
         if env_key == types.carrying_value_none_encoding:
             raise ValueError(
                 f"env_key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")
-        self.env_key: Union[str, None] = env_key
+        self.env_key: Union[int, str, None] = env_key
         self.x: Union[Term, Constant, NoneType, None] = x
         self.y: Union[Term, Constant, NoneType, None] = y
         self.value: Union[Term, Constant, NoneType, None] = value
@@ -122,13 +144,13 @@ class Write_Pixel(Instruction):
         elif order >= 2:
             self.y = NoneType()
 
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent: str = None, n_type: str = ""):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix
 
         ast.add_node(self, label=node_label,
-                     type=types.t2int["write_pixel"], carrying_value=None)
+                     type=types.t2int[n_type], carrying_value=None)
 
         self.value.to_ast(ast, parent_suffix=suffix,
                           order=0, parent=self)
@@ -141,18 +163,30 @@ class Write_Pixel(Instruction):
             ast.add_edge(parent, self, order=order)
 
 
+class WritePixelOutput(Write_Pixel):
+    FIXED_ENV_KEY = "OUTPUT_ENV"
+
+    def __init__(self, x: Union[Term, Constant, NoneType, None], y: Union[Term, Constant, NoneType, None], value: Union[Term, Constant, NoneType, None]):
+        super().__init__(self.FIXED_ENV_KEY, x, y, value)
+
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent: str = None, n_type: str = ""):
+        """Converts the term to an AST representation."""
+        super().to_ast(ast, parent_suffix, order, parent, n_type="write_pixel_output")
+
+
 # todo maybe replace direct key access with Term, etc..
 class Read_Var(Instruction):
-    def __init__(self, key):
+    def __init__(self, key: Union[int, str, None]):
         super().__init__()
         self.logger = setup_logger("Read_Var", level=logging.INFO)
 
         if key == types.carrying_value_none_encoding:
             raise ValueError(
                 f"key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")
-        self.key = key
+        self.key: Union[int, str, None] = key
 
     def execute(self):
+        # todo outsource this to singleton class
         namespace_id = os.environ.get("CURRENT_NAMESPACE_ID")
         return GMMService.get().get_var(namespace_id, self.key)
 
@@ -164,7 +198,7 @@ class Read_Var(Instruction):
         # A Read_Var cannot have children, so this method does nothing.
         pass
 
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix
@@ -177,14 +211,14 @@ class Read_Var(Instruction):
 
 
 class Write_Var(Instruction):
-    def __init__(self, key, value: Union[Term, Constant, NoneType, None]):
+    def __init__(self, key: Union[int, str, None], value: Union[Term, Constant, NoneType, None]):
         super().__init__()
         self.logger = setup_logger("Write_Var", level=logging.INFO)
 
         if key == types.carrying_value_none_encoding:
             raise ValueError(
                 f"key cannot be set to the carrying_value_none_encoding (which is {types.carrying_value_none_encoding}).")
-        self.key = key
+        self.key: Union[int, str, None] = key
         self.value: Union[Term, Constant, NoneType, None] = value
 
     def execute(self):
@@ -200,7 +234,7 @@ class Write_Var(Instruction):
     def delete_child(self, order: int):
         self.value = NoneType()
 
-    def to_ast(self, ast: nx.DiGraph = nx.DiGraph(), parent_suffix: str = "", order: int = 0, parent: str = None):
+    def to_ast(self, ast: nx.DiGraph, parent_suffix: str = "", order: int = 0, parent: str = None):
         """Converts the term to an AST representation."""
         suffix = f"{parent_suffix}.{order}"
         node_label = self.__class__.__name__ + suffix

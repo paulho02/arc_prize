@@ -31,13 +31,22 @@ class Environment():
         if not self.env:
             return []
 
-        max_x = max(x for x, _ in self.env.keys())
-        max_y = max(y for _, y in self.env.keys())
+        # Filter out keys where x or y is None
+        non_null_keys = []
+        for x, y in self.env.keys():
+            if x is not None and y is not None:
+                non_null_keys.append((x, y))
+        if not non_null_keys:
+            return []
+
+        max_x = max(x for x, _ in non_null_keys)
+        max_y = max(y for _, y in non_null_keys)
 
         env_list = [[0] * (max_y + 1) for _ in range(max_x + 1)]
 
         for (x, y), value in self.env.items():
-            env_list[x][y] = value
+            if x is not None and y is not None:
+                env_list[x][y] = value if value is not None else 0
 
         return env_list
 
@@ -59,13 +68,17 @@ class Environment():
         title = title if title else str(self)
         env_list = self.to_list()
 
-        print_func("------------------")
-        print_func(f"Env '{title}':")
+        output_lines = []
+        output_lines.append("------------------")
+        output_lines.append(f"Env '{title}':")
         for row in env_list:
-            for col in row:
-                print_func(f" {col} ", end="")
-            print_func()
-        print_func("------------------")
+            row_str = " ".join(f"{col:3}" for col in row)
+            output_lines.append(row_str)
+        output_lines.append("------------------")
+
+        # If print_func is like logger.info, print each line separately
+        for line in output_lines:
+            print_func(line)
 
 
 def evaluate(env1: Environment, env2: Environment) -> int:

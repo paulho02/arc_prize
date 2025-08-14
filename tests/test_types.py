@@ -6,7 +6,7 @@ def test_type_mappings():
     assert len(types.t2int.items()) == len(types.n_types.__args__)
 
     assert types.t2int["term"] == 2
-    assert types.t2int["while"] == 13
+    assert types.t2int["while"] == 14
 
     assert types.t2int["if"] == types.t2int[types.int2t[types.t2int["if"]]]
 

@@ -53,12 +53,12 @@ class NoneType(Executable):
 
 
 class Constant(Executable):
-    def __init__(self, value: Union[int, str, None] = None):
+    def __init__(self, value: Union[int, None] = None):
         self.logger = setup_logger("Constant", level=logging.INFO)
 
         self.value = value
 
-    def execute(self) -> Union[int, str, None]:
+    def execute(self) -> Union[int, None]:
         return self.value
 
     def add_child(self, child: 'Executable', order: int = 0):
