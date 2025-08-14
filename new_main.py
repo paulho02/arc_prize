@@ -1,6 +1,8 @@
 import argparse
 from datetime import datetime
 import logging
+import time
+import psutil
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -24,8 +26,8 @@ from instruction_language.surroundings.environment import Environment, GEMServic
 from logging_setup import setup_logger
 import numpy as np
 from sklearn.linear_model import LinearRegression
-import pickle
 import os
+import json
 
 
 logger = setup_logger("main", level=logging.INFO,
@@ -33,6 +35,8 @@ logger = setup_logger("main", level=logging.INFO,
 
 if not os.path.exists("storage"):
     os.makedirs("storage")
+
+proc = psutil.Process(os.getpid())
 
 
 class GraphEncoder(nn.Module):
@@ -155,14 +159,22 @@ if __name__ == "__main__":
     GEMService.set("EXP_OUTPUT_ENV", expected_output_env)
 
     start_episode = 0
-    reward_tracking = []
+    tracking_obj = {}
+    tracking_obj["reward_tracking"] = []
+    tracking_obj["memory_usage"] = []
+    tracking_obj["restart_episode_indices"] = []
+    tracking_obj["episode_times"] = []
 
     # Load checkpoint if provided
     if checkpoint is not None:
         loaded_checkpoint = torch.load(f"storage/{checkpoint}.pth")
 
         start_episode = loaded_checkpoint["episode"]
-        reward_tracking = loaded_checkpoint["stats_tracking_obj"]["reward_tracking"]
+        # todo rename key
+        tracking_obj = loaded_checkpoint["tracking_obj"]
+        # tracking at which episodes a restart was done
+        tracking_obj["restart_episode_indices"] += [
+            start_episode]
 
         action_encoder.load_state_dict(loaded_checkpoint["action_encoder"])
         graph_encoder.load_state_dict(loaded_checkpoint["graph_encoder"])
@@ -178,7 +190,9 @@ if __name__ == "__main__":
     num_steps = 65
 
     for episode in tqdm(range(start_episode, num_episodes), initial=start_episode, total=num_episodes):
+        episode_start_time = time.perf_counter()
         episode_loss = 0.0
+        episode_reward = 0.0
         codeblock = Codeblock()
         codeblock.execution_plan = []
 
@@ -264,17 +278,24 @@ if __name__ == "__main__":
         logger.info(codeblock)
         logger.info(end_ast)
         logger.info(end_root)
+        logger.info("-----------------")
+        logger.info(f"Threads: {proc.num_threads()}")
+        logger.info(f"Speicher: {proc.memory_info().rss / 1024 / 1024:.2f} MB")
         logger.info("--------")
         GEMService.get_initial_env().plot(0, print_func=logger.info)
         GEMService.get_output_env().plot(1, print_func=logger.info)
         logger.info("========")
 
+        tracking_obj["reward_tracking"].append(episode_reward)
+        tracking_obj["memory_usage"].append(
+            proc.memory_info().rss / 1024 / 1024)
+        tracking_obj["episode_times"].append(
+            time.perf_counter() - episode_start_time)
+
         if episode % 100 == 0:
             torch.save({
                 "episode": episode,
-                "stats_tracking_obj": {
-                    "reward_tracking": reward_tracking
-                },
+                "tracking_obj": tracking_obj,
                 "action_encoder": action_encoder.state_dict(),
                 "graph_encoder": graph_encoder.state_dict(),
                 "code_predicter": code_predicter.state_dict(),
@@ -289,22 +310,11 @@ if __name__ == "__main__":
         # plt.title(f"Episode {episode+1}")
         # plt.show()
 
-    plt.figure()
-    x_vals = np.arange(1, len(loss_tracking) + 1)
-    y_vals = np.array(loss_tracking)
+    # Save reward_tracking to a file
 
-    # Normal x-axis, logarithmic y-axis
-    plt.scatter(x_vals, y_vals)
-    plt.yscale('log')
-    plt.xlabel("Episode")
-    plt.ylabel("Loss (log scale)")
-    plt.title("Loss Tracking per Episode")
+    report_output_name = f"reporting/data_repo/tracking_obj_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    with open(report_output_name, "w") as f:
+        json.dump(tracking_obj, f, indent=2)
 
-    # Linear regression line
-    x_vals_reshape = x_vals.reshape(-1, 1)
-    reg = LinearRegression().fit(x_vals_reshape, np.log(y_vals))
-    y_pred = np.exp(reg.predict(x_vals_reshape))
-    plt.plot(x_vals, y_pred, color='red', label='Linear Regression')
-    plt.legend()
-
-    plt.show()
+    logger.info(f"Reward tracking saved to '{report_output_name}'")
+    logger.info("---------------------------------")
