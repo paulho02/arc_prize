@@ -171,7 +171,9 @@ def evaluate(codeblock: Codeblock) -> tuple[float, bool]:
     - reward: A float value representing the reward for the code block execution.
     - skip_episode: A boolean indicating if the execution should skip the current episode.
     """
-    interpreter = InstructionInterpreter("code_writer_memory_manager_id")
+    settings = GISManager.get("default")
+    settings["max_run_time_seconds"] = 10
+    interpreter = InstructionInterpreter(settings=settings)
 
     initial_env = Environment.from_list([[1, 1],
                                         [0, 1]])

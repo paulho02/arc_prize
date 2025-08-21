@@ -5,9 +5,10 @@ from typing import Union
 import networkx as nx
 
 from instruction_language.logging_setup import setup_logger
-from instruction_language.surroundings.memory import GMMService
 from instruction_language.elements import types
 from typing import Sequence
+
+from instruction_language.surroundings.memory import MemoryManager
 
 
 class Executable(ABC):
@@ -122,8 +123,7 @@ class Codeblock(Executable):
         self.execution_plan: list[Executable] = list(execution_plan)
 
     def execute(self):
-        mm = GMMService.get()
-        os.environ["CURRENT_NAMESPACE_ID"] = mm.new_namespace()
+        MemoryManager.new_namespace()
 
         for i, step in enumerate(self.execution_plan):
             try:

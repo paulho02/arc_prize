@@ -18,7 +18,7 @@ def test_basic_execution(sample_codeblock):
     GEMService.set("INITIAL_ENV", initial_env)
     GEMService.set("OUTPUT_ENV", Environment())
 
-    interpreter = InstructionInterpreter(memory_manager_id='hello_word_mm_id')
+    interpreter = InstructionInterpreter()
     interpreter.execute(sample_codeblock)
 
     expected_output_env = Environment.from_list([[0, 0, 0],
@@ -39,7 +39,7 @@ def test_basic_execution_1_1(sample_codeblock_1_1):
     print(GEMService._envs)
     GEMService.set("INITIAL_ENV", initial_env)
 
-    interpreter = InstructionInterpreter(memory_manager_id='hello_word_mm_id')
+    interpreter = InstructionInterpreter()
     interpreter.execute(sample_codeblock_1_1)
 
     expected_output_env = Environment.from_list([[0, 0, 0],
@@ -63,8 +63,7 @@ def test_max_loop_iterations_setting():
     test_settings = GISManager.get("default")
     test_settings["max_loop_iterations"] = 5
 
-    interpreter = InstructionInterpreter(
-        memory_manager_id='test_mm_id', settings=test_settings)
+    interpreter = InstructionInterpreter(settings=test_settings)
 
     GEMService.add_env("test_max_loop_iterations_setting")
 

@@ -106,7 +106,7 @@ def evaluate(env1: Environment, env2: Environment) -> int:
 
 class GEMService:
     """
-    (Global Memory Manager Service)
+    (Global Environment Manager Service)
     """
 
     _envs: dict[str, Environment] = {

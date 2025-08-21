@@ -49,7 +49,7 @@ def test_simple_new_node():
         carrying_value=0
     )
 
-    interpreter = InstructionInterpreter(__file__)
+    interpreter = InstructionInterpreter()
     interpreter.execute(codeblock)
 
     output_env = GEMService.get("OUTPUT_ENV")

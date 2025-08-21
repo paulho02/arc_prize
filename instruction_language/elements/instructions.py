@@ -6,8 +6,9 @@ from instruction_language.elements import types
 from instruction_language.elements.base import Constant, Executable, NoneType, Term
 from instruction_language.logging_setup import setup_logger
 from instruction_language.surroundings.environment import GEMService
-from instruction_language.surroundings.memory import GMMService
 import networkx as nx
+
+from instruction_language.surroundings.memory import MemoryManager
 
 
 class Instruction(Executable):
@@ -186,9 +187,7 @@ class Read_Var(Instruction):
         self.key: Union[int, str, None] = key
 
     def execute(self):
-        # todo outsource this to singleton class
-        namespace_id = os.environ.get("CURRENT_NAMESPACE_ID")
-        return GMMService.get().get_var(namespace_id, self.key)
+        return MemoryManager.get_var(self.key)
 
     def add_child(self, child: 'Executable', order: int = 0):
         # A Read_Var cannot have children, so this method does nothing.
@@ -222,8 +221,7 @@ class Write_Var(Instruction):
         self.value: Union[Term, Constant, NoneType, None] = value
 
     def execute(self):
-        namespace_id = os.environ.get("CURRENT_NAMESPACE_ID")
-        return GMMService.get().set_var(namespace_id, self.key, self.value.execute())
+        return MemoryManager.set_var(self.key, self.value.execute())
 
     def add_child(self, child: 'Executable', order: int = 0):
         if not isinstance(child, Term) and not isinstance(child, Constant):
