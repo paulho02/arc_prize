@@ -24,31 +24,39 @@ class Environment():
         """
         self.env[(x, y)] = value
 
-    def to_list(self) -> list[list[int]]:
+    def to_list(self) -> tuple[list[list[int]], int]:
         """
-        Convert the environment to a 2D list representation.
+        Convert the environment to a 2D list representation,
+        ignoring negative coordinates. Also returns the count
+        of coordinates with negative x or y values.
         """
         if not self.env:
-            return []
+            return [], 0
 
-        # Filter out keys where x or y is None
-        non_null_keys = []
+        non_null_positive_keys = []
+        negative_coord_count = 0
+
         for x, y in self.env.keys():
-            if x is not None and y is not None:
-                non_null_keys.append((x, y))
-        if not non_null_keys:
-            return []
+            if x is None or y is None:
+                continue
+            if x < 0 or y < 0:
+                negative_coord_count += 1
+            else:
+                non_null_positive_keys.append((x, y))
 
-        max_x = max(x for x, _ in non_null_keys)
-        max_y = max(y for _, y in non_null_keys)
+        if not non_null_positive_keys:
+            return [], negative_coord_count
+
+        max_x = max(x for x, _ in non_null_positive_keys)
+        max_y = max(y for _, y in non_null_positive_keys)
 
         env_list = [[0] * (max_y + 1) for _ in range(max_x + 1)]
 
         for (x, y), value in self.env.items():
-            if x is not None and y is not None:
+            if x is not None and y is not None and x >= 0 and y >= 0:
                 env_list[x][y] = value if value is not None else 0
 
-        return env_list
+        return env_list, negative_coord_count
 
     @staticmethod
     def from_list(env_list: list[list[int]]) -> 'Environment':
@@ -66,7 +74,7 @@ class Environment():
 
     def plot(self, title=None, print_func=print):
         title = title if title else str(self)
-        env_list = self.to_list()
+        env_list, num_negative_coords = self.to_list()
 
         output_lines = []
         output_lines.append("------------------")
@@ -74,6 +82,7 @@ class Environment():
         for row in env_list:
             row_str = " ".join(f"{col:3}" for col in row)
             output_lines.append(row_str)
+        output_lines.append(f"Negative coordinates: {num_negative_coords}")
         output_lines.append("------------------")
 
         # If print_func is like logger.info, print each line separately
@@ -87,17 +96,20 @@ def evaluate(env1: Environment, env2: Environment) -> int:
     function that evaluates the deviation between two environments
     can be used to calculate a score how good a environment is
     """
-    env1 = env1.to_list()
-    env2 = env2.to_list()
+    env1_list, _ = env1.to_list()
+    env2_list, _ = env2.to_list()
 
     deviation_score = 0
-    max_rows = max(len(env1), len(env2))
-    max_cols = max(len(env1[0]) if env1 else 0, len(env2[0]) if env2 else 0)
+    max_rows = max(len(env1_list), len(env2_list))
+    max_cols = max(len(env1_list[0]) if env1_list else 0, len(
+        env2_list[0]) if env2_list else 0)
 
     for i in range(max_rows):
         for j in range(max_cols):
-            val1 = env1[i][j] if i < len(env1) and j < len(env1[i]) else None
-            val2 = env2[i][j] if i < len(env2) and j < len(env2[i]) else None
+            val1 = env1_list[i][j] if i < len(
+                env1_list) and j < len(env1_list[i]) else None
+            val2 = env2_list[i][j] if i < len(
+                env2_list) and j < len(env2_list[i]) else None
             if val1 != val2:
                 deviation_score += 1
 

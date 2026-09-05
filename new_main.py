@@ -110,6 +110,37 @@ def actions_to_tensor(action_space):
     return torch.tensor(action_tensor, dtype=torch.float)
 
 
+def choose_action(model: CodePredicter, rely_on_model_weight, state, action_embeddings):
+
+    # Choose action: epsilon-greedy
+    if random.random() < rely_on_model_weight:
+        # Model chooses best action
+        scores = []
+        for i in range(action_embeddings.size(0)):
+            score = model(state[0], action_embeddings[i])
+            scores.append(score.item())
+        best_action_idx = int(torch.tensor(scores).argmax())
+    else:
+        # Random action
+        best_action_idx = random.randint(
+            0, action_embeddings.size(0) - 1)
+
+    return action_space[best_action_idx], best_action_idx
+
+
+def choose_carrying_value(model: CarryingValuePredicter, state, action_embeddings, best_action_idx):
+    if random.random() < rely_on_model_weight:
+        # Use model to predict carrying value
+        carrying_value = model(
+            state[0], action_embeddings[best_action_idx])
+        carrying_value = carrying_value.item()
+    else:
+        # maximum of 50 vars and envs
+        carrying_value = random.randint(0, 50)
+
+    return carrying_value
+
+
 parser = argparse.ArgumentParser(
     description="Codewriter RL Training Program")
 
@@ -181,17 +212,27 @@ if __name__ == "__main__":
 
     # Configurable parameter: how much to rely on model vs. random (epsilon-greedy)
     rely_on_model_weight = 0.7  # 1.0 = always model, 0.0 = always random
-    num_episodes = 100
-    num_steps = 65
+    num_episodes = 11000
+    num_steps = 30
+
+    #####################################################
+    #####################################################
+
+    choosing_prep_time = []
+    choosing_time = []
+    executing_time = []
+    executing_and_co = []
+    optimizing_time = []
+
+    #####################################################
+    #####################################################
 
     for episode in tqdm(range(start_episode, num_episodes), initial=start_episode, total=num_episodes):
+
         episode_start_time = time.perf_counter()
         episode_loss = 0.0
         episode_reward = 0.0
-        codeblock = Codeblock()
-        codeblock.execution_plan = []
-
-        start_ast, start_root = codeblock.to_ast()
+        codeblock = Codeblock([])
 
         # plot_blueprint = hierarchy_plot(start_ast, start_root)
         # labels = nx.get_node_attributes(start_ast, 'label')
@@ -202,6 +243,7 @@ if __name__ == "__main__":
 
         for step in range(num_steps):
 
+            choosing_prep_start_time = time.perf_counter()
             ast, root = codeblock.to_ast()
             encode_ast_nodes(ast)
             data = from_networkx(ast)
@@ -214,35 +256,35 @@ if __name__ == "__main__":
             action_tensor = actions_to_tensor(action_space)
             action_embeddings = action_encoder(action_tensor)
 
-            # Choose action: epsilon-greedy
-            if random.random() < rely_on_model_weight:
-                # Model chooses best action
-                scores = []
-                for i in range(action_embeddings.size(0)):
-                    score = code_predicter(state[0], action_embeddings[i])
-                    scores.append(score.item())
-                best_action_idx = int(torch.tensor(scores).argmax())
-            else:
-                # Random action
-                best_action_idx = random.randint(
-                    0, action_embeddings.size(0) - 1)
+            choosing_prep_time.append(time.perf_counter() -
+                                      choosing_prep_start_time)
 
-            chosen_action = action_space[best_action_idx]
+            choosing_start_time = time.perf_counter()
+            chosen_action, best_action_idx = choose_action(
+                model=code_predicter,
+                rely_on_model_weight=rely_on_model_weight,
+                state=state,
+                action_embeddings=action_embeddings
+            )
             chosen_parent, chosen_type, chosen_order = chosen_action
 
-            if random.random() < rely_on_model_weight:
-                # Use model to predict carrying value
-                carrying_value = carrying_value_predicter(
-                    state[0], action_embeddings[best_action_idx])
-                carrying_value = carrying_value.item()
-            else:
-                # maximum of 50 vars and envs
-                carrying_value = random.randint(0, 50)
+            # predict carrying value only when needed
+            carrying_value = None
+            if chosen_type == "constant" or chosen_type == "read_var" or chosen_type == "write_var":
+                carrying_value = choose_carrying_value(
+                    carrying_value_predicter, state, action_embeddings, best_action_idx)
+
+            choosing_time.append(time.perf_counter() - choosing_start_time)
 
             # todo make carrying value integer in all nodes
+            executing_and_co_start_time = time.perf_counter()
             code_writer.new_node(chosen_parent, chosen_type,
                                  chosen_order, carrying_value)
-            reward, skip_episode = code_writer.evaluate(codeblock)
+            reward, skip_episode = code_writer.evaluate(
+                codeblock, executing_time)
+
+            executing_and_co.append(
+                time.perf_counter() - executing_and_co_start_time)
             episode_reward = reward
             reward = torch.tensor([reward])
             # next_codeblock = apply_action(codeblock, chosen_action)
@@ -250,9 +292,11 @@ if __name__ == "__main__":
             # reward = torch.tensor([random.uniform(0, 1)])  # Dummy reward
 
             # Forward pass for chosen action
+            # todo double check if this call is correct
             pred_score = code_predicter(
                 state[0], action_embeddings[best_action_idx])
 
+            optimizing_start_time = time.perf_counter()
             loss = loss_fn(pred_score, reward)
             episode_loss = loss.item()
 
@@ -261,10 +305,20 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
 
+            optimizing_time.append(time.perf_counter() - optimizing_start_time)
+
             if skip_episode:
                 logger.warning(
                     f"Skipping episode {episode+1} due execution timeouts.")
+                for _ in range(num_steps - step):
+                    choosing_prep_time.append(0)
+                    choosing_time.append(0)
+                    executing_time.append(0)
+                    executing_and_co.append(0)
+                    optimizing_time.append(0)
                 break
+
+        episode_time = time.perf_counter() - episode_start_time
 
         # if step % 10 == 0:
         end_ast, end_root = codeblock.to_ast()
@@ -315,3 +369,63 @@ if __name__ == "__main__":
 
     logger.info(f"Reward tracking saved to '{report_output_name}'")
     logger.info("---------------------------------")
+
+    import matplotlib.pyplot as plt
+
+    # Convert timing lists to numpy arrays for easier slicing
+    choosing_prep_time = np.array(choosing_prep_time)
+    choosing_time = np.array(choosing_time)
+    executing_time = np.array(executing_time)
+    executing_and_co = np.array(executing_and_co)
+    optimizing_time = np.array(optimizing_time)
+
+    # Calculate episode boundaries
+    episode_indices = np.arange(0, len(choosing_prep_time), num_steps)
+    num_episodes_recorded = len(episode_indices)
+
+    # Prepare averages per episode
+    avg_choosing_prep = []
+    avg_choosing = []
+    avg_executing = []
+    avg_executing_and_co = []
+    avg_optimizing = []
+
+    for i in range(num_episodes_recorded):
+        start = episode_indices[i]
+        end = episode_indices[i] + num_steps
+        avg_choosing_prep.append(choosing_prep_time[start:end].mean())
+        avg_choosing.append(choosing_time[start:end].mean())
+        avg_executing.append(executing_time[start:end].mean())
+        avg_executing_and_co.append(executing_and_co[start:end].mean())
+        avg_optimizing.append(optimizing_time[start:end].mean())
+
+    plt.figure(figsize=(15, 6))
+    plt.plot(choosing_prep_time, label='Choosing Prep', color='blue')
+    plt.plot(choosing_time, label='Choosing', color='orange')
+    plt.plot(executing_time, label='Executing', color='green')
+    plt.plot(executing_and_co, label='Executing & Co.', color='purple')
+    plt.plot(optimizing_time, label='Optimizing', color='red')
+
+    # Draw horizontal lines for each episode
+    for idx in episode_indices:
+        plt.axvline(x=idx, color='gray', linestyle='--', alpha=0.3)
+
+    # Plot averages as horizontal lines
+    for i, idx in enumerate(episode_indices):
+        plt.hlines(avg_choosing_prep[i], idx, idx+num_steps,
+                   colors='blue', linestyles='dashed', label=None)
+        plt.hlines(avg_choosing[i], idx, idx+num_steps,
+                   colors='orange', linestyles='dashed', label=None)
+        plt.hlines(avg_executing[i], idx, idx+num_steps,
+                   colors='green', linestyles='dashed', label=None)
+        plt.hlines(avg_executing_and_co[i], idx, idx+num_steps,
+                   colors='purple', linestyles='dashed', label=None)
+        plt.hlines(avg_optimizing[i], idx, idx+num_steps,
+                   colors='red', linestyles='dashed', label=None)
+
+    plt.legend()
+    plt.xlabel('Step')
+    plt.ylabel('Time (seconds)')
+    plt.title('Timing per Step and Episode Averages')
+    plt.tight_layout()
+    plt.show()

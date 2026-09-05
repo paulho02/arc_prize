@@ -1,3 +1,6 @@
+import matplotlib.pyplot as plt
+import os
+import psutil
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,6 +11,9 @@ from torch_geometric.nn import GCNConv, global_mean_pool
 The purpose of this file is to implement a simple GNN example for learning, illustrating and testing the basic functionality of a GNN.
 Its totally unralted to the main use case of this project
 """
+
+proc = psutil.Process(os.getpid())
+memory_usage = []
 
 
 class GraphEncoder(nn.Module):
@@ -56,7 +62,7 @@ model = MoleculeClassifier(in_channels=2, hidden_channels=4)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 loss_fn = nn.BCELoss()
 
-for epoch in range(1, 100):
+for epoch in range(1, 1000):
     for batch in loader:
         optimizer.zero_grad()
         out = model(batch.x, batch.edge_index, batch.batch)
@@ -66,6 +72,8 @@ for epoch in range(1, 100):
 
         print(f"[Epoch {epoch}] Loss: {loss.item():.4f}")
     print("---------------------------------------")
+    memory_usage.append(
+        proc.memory_info().rss / 1024 / 1024)
 
 print()
 print("Training ended")
@@ -79,3 +87,13 @@ loader_new = DataLoader([data_new], batch_size=1)
 
 for batch in loader_new:
     model(batch.x, batch.edge_index, batch.batch)
+
+
+plt.figure(figsize=(8, 4))
+plt.plot(memory_usage, marker='o')
+plt.xlabel('Epoch')
+plt.ylabel('Memory Usage (MB)')
+plt.title('Memory Usage During Training')
+plt.grid(True)
+plt.tight_layout()
+plt.show()

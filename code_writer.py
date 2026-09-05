@@ -9,7 +9,9 @@ from instruction_language.interpreter import InstructionInterpreter
 from instruction_language.surroundings.environment import Environment, GEMService
 from instruction_language.surroundings.environment import evaluate as env_evaluate
 import instruction_language.elements.types as types  # import n_types, all_types
+from instruction_language.surroundings.interpreter_settings import GISManager
 from logging_setup import setup_logger
+import time
 
 logger = setup_logger(
     "code_writer", level=logging.INFO, to_console=False)
@@ -163,7 +165,7 @@ def determine_incomplete_nodes(root: Codeblock) -> list[Executable]:
     pass
 
 
-def evaluate(codeblock: Codeblock) -> tuple[float, bool]:
+def evaluate(codeblock: Codeblock, executing_time: list) -> tuple[float, bool]:
     # todo make function more generic
     """Evaluates the code block and returns a reward based on the output environment.
 
@@ -181,12 +183,13 @@ def evaluate(codeblock: Codeblock) -> tuple[float, bool]:
     output_env = Environment()
     GEMService.set("OUTPUT_ENV", output_env)
 
+    executing_start_time = time.perf_counter()
     try:
         interpreter.execute(codeblock)
         deviation = env_evaluate(GEMService.get(
             "OUTPUT_ENV"), GEMService.get("EXP_OUTPUT_ENV"))
-        # Sqaured deviation to penalize larger deviations more heavily and guarantee non-negative values
-        deviation = deviation ^ 2
+        # Squared deviation to penalize larger deviations more heavily and guarantee non-negative values
+        deviation = deviation ** 2
 
         deviation_score = 100 - deviation  # Higher is better, so we subtract from 100
         deviation_score = max(0, deviation_score)  # Ensure non-negative
@@ -202,3 +205,6 @@ def evaluate(codeblock: Codeblock) -> tuple[float, bool]:
         logger.warning(
             f"Error ({type(e).__name__}) during execution: {e} || -> return min reward")
         return 0.0, False
+
+    finally:
+        executing_time.append(time.perf_counter() - executing_start_time)
